@@ -312,50 +312,8 @@ export const listNearbyOpportunities = asyncHandler(async (req, res) => {
     values
   );
 
-  let data = rows;
-
-  if (data.length < 6) {
-    const fallbackValues = [radius];
-    const fallbackFilters = [`op.status = 'open'`];
-
-    if (data.length) {
-      fallbackValues.push(data.map(item => item.id));
-      fallbackFilters.push(`NOT (op.id = ANY($${fallbackValues.length}::uuid[]))`);
-    }
-
-    if (category) {
-      fallbackValues.push(category);
-      fallbackFilters.push(`lower(op.category) = lower($${fallbackValues.length})`);
-    }
-
-    if (max_hours) {
-      fallbackValues.push(max_hours);
-      fallbackFilters.push(`op.hours_estimate <= $${fallbackValues.length}`);
-    }
-
-    const fallbackLimit = Math.max(6 - data.length, 0);
-    const fallbackResult = await query(
-      `SELECT op.*, org.name AS organization_name,
-         ROUND((0.4 + random() * GREATEST($1 - 0.4, 0.4))::numeric, 2) AS distance_km,
-         true AS is_sample_distance,
-         COUNT(app.id)::int AS applications_count
-       FROM opportunities op
-       JOIN organizations org ON org.id = op.organization_id
-       LEFT JOIN applications app ON app.opportunity_id = op.id
-       WHERE ${fallbackFilters.join(' AND ')}
-       GROUP BY op.id, org.name
-       ORDER BY random()
-       LIMIT ${fallbackLimit}`,
-      fallbackValues
-    );
-
-    data = [...data, ...fallbackResult.rows].sort(
-      (a, b) => Number(a.distance_km || 0) - Number(b.distance_km || 0)
-    );
-  }
-
   res.json({
-    data,
+    data: rows,
     center: { lat, lng },
     radius_km: radius,
     used_live_location: hasCoordinates,
