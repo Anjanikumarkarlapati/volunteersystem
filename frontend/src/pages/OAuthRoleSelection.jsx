@@ -48,7 +48,7 @@ export default function OAuthRoleSelection() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-[40px] border border-line/20 bg-white-card shadow-xl">
+        <div className="rounded-[40px] border border-line/20 bg-white-card shadow-xl">
           <form onSubmit={submit}>
             <div className="p-6 sm:p-8 space-y-6">
               <motion.div
