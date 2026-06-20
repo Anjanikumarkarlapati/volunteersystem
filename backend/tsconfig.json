@@ -16,12 +16,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
+    "noFallthroughCasesInSwitch": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "uploads"]
