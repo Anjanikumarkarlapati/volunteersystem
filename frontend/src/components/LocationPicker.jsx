@@ -916,12 +916,17 @@ export default function LocationPicker({
               </button>
             )}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
               <input
                 className="w-full rounded-xl border border-line/20 bg-soft-card-2 pl-9 pr-3 py-2 text-sm text-text outline-none placeholder:text-muted-light focus:border-black/30"
                 placeholder={`Search ${step}s…`}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                  }
+                }}
               />
             </div>
           </div>
