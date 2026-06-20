@@ -1,0 +1,58 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+web_stage/
+
+# Build outputs and temporary directories
+dist/
+build/
+out/
+.next/
+.nuxt/
+coverage/
+.nyc_output/
+.cache/
+.eslintcache
+.parcel-cache
+.turbo/
+.vercel/
+.npm/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+!.env.example
+
+# Logs and debug files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+server_err.txt
+server_out.txt
+
+# OS and Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Project-specific uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Database files & backups
+*.backup
+*.dump
+*.sql.gz
