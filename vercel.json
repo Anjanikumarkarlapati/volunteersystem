@@ -1,16 +1,19 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "https://volunteersystem-backend.onrender.com/api/:path*"
+      "src": "/api/(.*)",
+      "dest": "https://volunteersystem-backend.onrender.com/api/$1"
     },
     {
-      "source": "/uploads/:path*",
-      "destination": "https://volunteersystem-backend.onrender.com/uploads/:path*"
+      "src": "/uploads/(.*)",
+      "dest": "https://volunteersystem-backend.onrender.com/uploads/$1"
     },
     {
-      "source": "/((?!api|uploads).*)|/",
-      "destination": "/index.html"
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
