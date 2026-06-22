@@ -204,7 +204,7 @@ function Sidebar({ collapsed, onToggle, unreadCount, user }) {
       {/* User info at bottom */}
       {collapsed ? (
         <div className="border-t border-outline-variant p-2 flex justify-center">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-on-primary shadow-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-on-surface text-[10px] font-bold text-on-primary shadow-sm">
             {getInitials(user.name)}
           </div>
         </div>
@@ -212,7 +212,7 @@ function Sidebar({ collapsed, onToggle, unreadCount, user }) {
         <div className="border-t border-outline-variant p-3">
           <div className="rounded-2xl bg-surface-container-high p-3 border border-outline-variant">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-on-primary shadow-sm">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-on-surface text-[10px] font-bold text-on-primary shadow-sm">
                 {getInitials(user.name)}
               </div>
               <div className="min-w-0 flex-1">
@@ -413,7 +413,7 @@ export default function DashboardLayout() {
                   className="flex h-9 items-center gap-2.5 rounded-full border border-outline-variant bg-surface-container-lowest px-3 hover:bg-surface-container transition-colors"
                   onClick={() => setProfileOpen(v => !v)}
                 >
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-on-primary">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-on-surface text-[10px] font-bold text-on-primary">
                     {getInitials(user.name)}
                   </span>
                   <div className="hidden text-left sm:block">
@@ -448,7 +448,7 @@ export default function DashboardLayout() {
                       {/* User info */}
                       <div className="bg-surface-container rounded-2xl p-4 mb-2">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary shrink-0">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-on-surface text-sm font-bold text-on-primary shrink-0">
                             {getInitials(user.name)}
                           </div>
                           <div className="min-w-0">
