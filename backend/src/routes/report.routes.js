@@ -17,7 +17,8 @@ router.get(
   [
     query('organization_id')
       .optional()
-      .isUUID()
+      .isString()
+      .isLength({ min: 36, max: 36 })
       .withMessage('organization_id must be a valid UUID'),
     validate,
   ],

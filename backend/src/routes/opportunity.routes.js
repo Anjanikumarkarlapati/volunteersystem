@@ -41,26 +41,30 @@ router.post(
   createOpportunity
 );
 router.get('/nearby', authenticate, listNearbyOpportunities);
-router.get('/:id', [param('id').isUUID(), validate], getOpportunity);
+router.get(
+  '/:id',
+  [param('id').isString().isLength({ min: 36, max: 36 }), validate],
+  getOpportunity
+);
 router.put(
   '/:id',
   authenticate,
   authorize('organization', 'admin'),
-  [param('id').isUUID(), validate],
+  [param('id').isString().isLength({ min: 36, max: 36 }), validate],
   updateOpportunity
 );
 router.delete(
   '/:id',
   authenticate,
   authorize('organization', 'admin'),
-  [param('id').isUUID(), validate],
+  [param('id').isString().isLength({ min: 36, max: 36 }), validate],
   deleteOpportunity
 );
 router.get(
   '/:id/applications',
   authenticate,
   authorize('organization', 'admin'),
-  [param('id').isUUID(), validate],
+  [param('id').isString().isLength({ min: 36, max: 36 }), validate],
   listOpportunityApplications
 );
 router.post(
@@ -68,7 +72,7 @@ router.post(
   authenticate,
   authorize('volunteer'),
   [
-    param('opportunityId').isUUID(),
+    param('opportunityId').isString().isLength({ min: 36, max: 36 }),
     body('message').optional({ nullable: true }).trim().isLength({ max: 2000 }),
     validate,
   ],

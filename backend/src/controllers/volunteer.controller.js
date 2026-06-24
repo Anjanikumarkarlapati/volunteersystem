@@ -166,7 +166,7 @@ export const getVolunteerHeatmap = asyncHandler(async (req, res) => {
   // Weekly attendance counts for last 52 weeks
   const { rows: weekly } = await query(
     `SELECT
-       date_trunc('week', e.start_at)::date AS week_start,
+       to_char(date_trunc('week', e.start_at), 'YYYY-MM-DD') AS week_start,
        COUNT(*)::int AS events_count,
        COALESCE(SUM(att.hours), 0)::numeric AS hours_total
      FROM attendance att

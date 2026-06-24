@@ -27,12 +27,20 @@ router.put(
   updateMyOrganizationProfile
 );
 router.get('/', authenticate, authorize('admin'), listOrganizationProfiles);
-router.get('/:id', [param('id').isUUID(), validate], getOrganization);
+router.get(
+  '/:id',
+  [param('id').isString().isLength({ min: 36, max: 36 }), validate],
+  getOrganization
+);
 router.patch(
   '/:id/verify',
   authenticate,
   authorize('admin'),
-  [param('id').isUUID(), body('verified').optional().isBoolean(), validate],
+  [
+    param('id').isString().isLength({ min: 36, max: 36 }),
+    body('verified').optional().isBoolean(),
+    validate,
+  ],
   verifyOrganization
 );
 

@@ -24,7 +24,11 @@ router.get('/dashboard', getDashboardOverview);
 router.get('/users', getUsers);
 router.patch(
   '/users/:id/status',
-  [param('id').isUUID(), body('status').isIn(['active', 'pending', 'suspended']), validate],
+  [
+    param('id').isString().isLength({ min: 36, max: 36 }),
+    body('status').isIn(['active', 'pending', 'suspended']),
+    validate,
+  ],
   changeUserStatus
 );
 router.get('/monitoring', getPlatformMonitoring);
@@ -32,13 +36,21 @@ router.get('/monitoring', getPlatformMonitoring);
 // NEW admin endpoints
 router.get('/volunteer-profiles', getAllVolunteerProfiles);
 router.get('/attendance', getAllAttendance);
-router.get('/volunteers/:id/tasks', [param('id').isUUID(), validate], getVolunteerCompletedTasks);
+router.get(
+  '/volunteers/:id/tasks',
+  [param('id').isString().isLength({ min: 36, max: 36 }), validate],
+  getVolunteerCompletedTasks
+);
 
 // Opportunity Approvals
 router.get('/opportunities/pending', getPendingOpportunities);
 router.patch(
   '/opportunities/:id/status',
-  [param('id').isUUID(), body('status').isIn(['open', 'cancelled', 'draft']), validate],
+  [
+    param('id').isString().isLength({ min: 36, max: 36 }),
+    body('status').isIn(['open', 'cancelled', 'draft']),
+    validate,
+  ],
   changeOpportunityStatus
 );
 
@@ -46,7 +58,11 @@ router.patch(
 router.get('/events/search', searchEvents);
 router.post(
   '/assign-task',
-  [body('volunteer_id').isUUID(), body('event_id').isUUID(), validate],
+  [
+    body('volunteer_id').isString().isLength({ min: 36, max: 36 }),
+    body('event_id').isString().isLength({ min: 36, max: 36 }),
+    validate,
+  ],
   assignTask
 );
 
