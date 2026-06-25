@@ -29,7 +29,7 @@ router.put(
 router.get('/', authenticate, authorize('admin'), listOrganizationProfiles);
 router.get(
   '/:id',
-  [param('id').isString().isLength({ min: 36, max: 36 }), validate],
+  [param('id').isString().trim().isLength({ min: 36, max: 36 }), validate],
   getOrganization
 );
 router.patch(
@@ -37,7 +37,7 @@ router.patch(
   authenticate,
   authorize('admin'),
   [
-    param('id').isString().isLength({ min: 36, max: 36 }),
+    param('id').isString().trim().isLength({ min: 36, max: 36 }),
     body('verified').optional().isBoolean(),
     validate,
   ],

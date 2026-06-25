@@ -169,26 +169,40 @@ export const updateAttendance = asyncHandler(async (req, res) => {
     hours = 4;
   }
 
-  const { rows } = await query(
-    `UPDATE attendance
-     SET status = COALESCE($2::varchar, status),
-       check_in_at = COALESCE($3::timestamptz, check_in_at),
-       check_out_at = COALESCE($4::timestamptz, check_out_at),
-       hours = COALESCE($5::numeric, hours),
-       notes = COALESCE($6::text, notes)
-     WHERE id = $1
-     RETURNING *`,
-    [
-      req.params.id,
-      req.body.status || null,
-      req.body.check_in_at || (isCompleting && !attendance.check_in_at ? checkInAt : null),
-      req.body.check_out_at || (isCompleting && !attendance.check_out_at ? checkOutAt : null),
-      hours ?? null,
-      req.body.notes || null,
-    ]
-  );
+  const updated = await withTransaction(async client => {
+    const { rows } = await client.query(
+      `UPDATE attendance
+       SET status = COALESCE($2::varchar, status),
+         check_in_at = COALESCE($3::timestamptz, check_in_at),
+         check_out_at = COALESCE($4::timestamptz, check_out_at),
+         hours = COALESCE($5::numeric, hours),
+         notes = COALESCE($6::text, notes)
+       WHERE id = $1
+       RETURNING *`,
+      [
+        req.params.id,
+        req.body.status || null,
+        req.body.check_in_at || (isCompleting && !attendance.check_in_at ? checkInAt : null),
+        req.body.check_out_at || (isCompleting && !attendance.check_out_at ? checkOutAt : null),
+        hours ?? null,
+        req.body.notes || null,
+      ]
+    );
 
-  const updated = rows[0];
+    await client.query(
+      `UPDATE volunteers
+       SET total_hours = COALESCE((
+         SELECT SUM(hours)
+         FROM attendance
+         WHERE volunteer_id = $1
+           AND status = 'attended'
+       ), 0)
+       WHERE id = $1`,
+      [attendance.volunteer_id]
+    );
+
+    return rows[0];
+  });
 
   // Auto-notify volunteer when marked as attended (task completed)
   if (req.body.status === 'attended' && attendance.status !== 'attended') {

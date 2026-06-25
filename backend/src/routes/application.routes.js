@@ -17,7 +17,7 @@ router.patch(
   authenticate,
   authorize('organization', 'admin'),
   [
-    param('id').isString().isLength({ min: 36, max: 36 }),
+    param('id').isString().trim().isLength({ min: 36, max: 36 }),
     body('status').isIn(['pending', 'approved', 'rejected', 'withdrawn', 'waitlisted']),
     body('review_notes').optional({ nullable: true }).trim().isLength({ max: 2000 }),
     validate,

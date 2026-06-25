@@ -26,12 +26,16 @@ router.post(
   ],
   createSquad
 );
-router.get('/:id', [param('id').isString().isLength({ min: 36, max: 36 }), validate], getSquad);
+router.get(
+  '/:id',
+  [param('id').isString().trim().isLength({ min: 36, max: 36 }), validate],
+  getSquad
+);
 router.post(
   '/:id/members',
   [
-    param('id').isString().isLength({ min: 36, max: 36 }),
-    body('volunteer_id').isString().isLength({ min: 36, max: 36 }),
+    param('id').isString().trim().isLength({ min: 36, max: 36 }),
+    body('volunteer_id').isString().trim().isLength({ min: 36, max: 36 }),
     validate,
   ],
   addSquadMember

@@ -1,5 +1,6 @@
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import ChatbotWidget from './components/common/ChatbotWidget.jsx';
 import DashboardLayout from './layouts/DashboardLayout.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -106,6 +107,7 @@ export default function App() {
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <ChatbotWidget />
     </GoogleOAuthProvider>
   );
 }

@@ -25,7 +25,7 @@ router.get('/users', getUsers);
 router.patch(
   '/users/:id/status',
   [
-    param('id').isString().isLength({ min: 36, max: 36 }),
+    param('id').isString().trim().isLength({ min: 36, max: 36 }),
     body('status').isIn(['active', 'pending', 'suspended']),
     validate,
   ],
@@ -38,7 +38,7 @@ router.get('/volunteer-profiles', getAllVolunteerProfiles);
 router.get('/attendance', getAllAttendance);
 router.get(
   '/volunteers/:id/tasks',
-  [param('id').isString().isLength({ min: 36, max: 36 }), validate],
+  [param('id').isString().trim().isLength({ min: 36, max: 36 }), validate],
   getVolunteerCompletedTasks
 );
 
@@ -47,7 +47,7 @@ router.get('/opportunities/pending', getPendingOpportunities);
 router.patch(
   '/opportunities/:id/status',
   [
-    param('id').isString().isLength({ min: 36, max: 36 }),
+    param('id').isString().trim().isLength({ min: 36, max: 36 }),
     body('status').isIn(['open', 'cancelled', 'draft']),
     validate,
   ],
@@ -59,8 +59,8 @@ router.get('/events/search', searchEvents);
 router.post(
   '/assign-task',
   [
-    body('volunteer_id').isString().isLength({ min: 36, max: 36 }),
-    body('event_id').isString().isLength({ min: 36, max: 36 }),
+    body('volunteer_id').isString().trim().isLength({ min: 36, max: 36 }),
+    body('event_id').isString().trim().isLength({ min: 36, max: 36 }),
     validate,
   ],
   assignTask

@@ -28,7 +28,10 @@ function buildGrid(weekly = []) {
 
   const current = new Date(start);
   while (current <= today) {
-    const weekStart = current.toISOString().split('T')[0];
+    const year = current.getFullYear();
+    const month = String(current.getMonth() + 1).padStart(2, '0');
+    const day = String(current.getDate()).padStart(2, '0');
+    const weekStart = `${year}-${month}-${day}`;
     grid.push(weekMap[weekStart] || { week_start: weekStart, events_count: 0, hours_total: 0 });
     current.setDate(current.getDate() + 7);
   }

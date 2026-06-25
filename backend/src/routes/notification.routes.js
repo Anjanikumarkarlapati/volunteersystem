@@ -16,7 +16,7 @@ router.patch('/read-all', authenticate, markAllNotificationsRead);
 router.patch(
   '/:id/read',
   authenticate,
-  [param('id').isString().isLength({ min: 36, max: 36 }), validate],
+  [param('id').isString().trim().isLength({ min: 36, max: 36 }), validate],
   markNotificationRead
 );
 router.post(
@@ -24,7 +24,7 @@ router.post(
   authenticate,
   authorize('admin'),
   [
-    body('user_id').isString().isLength({ min: 36, max: 36 }),
+    body('user_id').isString().trim().isLength({ min: 36, max: 36 }),
     body('title').trim().isLength({ min: 2, max: 160 }),
     body('message').trim().isLength({ min: 2 }),
     body('type').optional().trim().isLength({ min: 2, max: 40 }),
