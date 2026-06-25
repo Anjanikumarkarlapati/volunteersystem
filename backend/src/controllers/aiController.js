@@ -1,19 +1,17 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { query } from '../config/db.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+// Initialize Gemini with the API key from environment variables
+// It will throw a clear error later if the key is missing when called
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'missing-key');
 
 export const getRecommendations = asyncHandler(async (req, res) => {
-  // Ensure user is a volunteer
   if (req.user.role !== 'volunteer') {
     throw new ApiError(403, 'Only volunteers can get event recommendations');
   }
 
-  // 1. Fetch volunteer's skills and interests
   const volunteerResult = await query(
     'SELECT skills, interests FROM volunteers WHERE user_id = $1',
     [req.user.id]
@@ -27,7 +25,6 @@ export const getRecommendations = asyncHandler(async (req, res) => {
   const skills = volunteer.skills || [];
   const interests = volunteer.interests || [];
 
-  // 2. Fetch available events
   const eventsResult = await query(
     `SELECT id, title, description, category, required_skills, location, start_at 
      FROM events 
@@ -45,10 +42,8 @@ export const getRecommendations = asyncHandler(async (req, res) => {
     });
   }
 
-  // 3. Prompt Claude for recommendations
   const prompt = `
-You are an intelligent volunteer coordinator. Your task is to match a volunteer with the most suitable upcoming events based on their skills and interests.
-
+You are an intelligent volunteer coordinator. Match a volunteer with suitable upcoming events.
 Volunteer Profile:
 - Skills: ${skills.join(', ') || 'None specified'}
 - Interests: ${interests.join(', ') || 'None specified'}
@@ -56,9 +51,7 @@ Volunteer Profile:
 Available Events:
 ${JSON.stringify(events, null, 2)}
 
-Please select the top 3 most relevant events for this volunteer.
-Rank them from most suitable to least.
-Provide your response in raw JSON format matching this exact schema, without any markdown formatting or extra text:
+Provide your response in raw JSON format matching this exact schema:
 {
   "recommendations": [
     {
@@ -68,20 +61,18 @@ Provide your response in raw JSON format matching this exact schema, without any
       "reason": "Why this is a good match"
     }
   ],
-  "explanation": "A short overall encouraging message explaining the matching logic."
+  "explanation": "A short encouraging message explaining the logic."
 }`;
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-3-7-sonnet-20250219',
-      max_tokens: 1000,
-      temperature: 0.2,
-      system:
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      systemInstruction:
         'You are an expert matchmaking system for volunteers. Always respond in valid JSON format only.',
-      messages: [{ role: 'user', content: prompt }],
     });
 
-    const responseText = response.content[0].text;
+    const response = await model.generateContent(prompt);
+    const responseText = response.response.text();
 
     // Parse the JSON out of the response (stripping any accidental markdown blocks)
     const jsonMatch = responseText.match(/\{[\s\S]*\}/);
@@ -89,7 +80,7 @@ Provide your response in raw JSON format matching this exact schema, without any
 
     res.json(parsedResponse);
   } catch (error) {
-    console.error('Claude API Error:', error);
+    console.error('Gemini API Error:', error);
     throw new ApiError(500, 'Failed to generate AI recommendations');
   }
 });
@@ -99,17 +90,15 @@ export const chatWithAssistant = asyncHandler(async (req, res) => {
   if (!message) throw new ApiError(400, 'Message is required');
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-3-7-sonnet-20250219',
-      max_tokens: 1000,
-      temperature: 0.7,
-      system: system || 'You are a helpful assistant for the VolunteerMS platform.',
-      messages: [{ role: 'user', content: message }],
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.5-flash',
+      systemInstruction: system || 'You are a helpful assistant for the VolunteerMS platform.',
     });
 
-    res.json({ reply: response.content[0].text });
+    const response = await model.generateContent(message);
+    res.json({ reply: response.response.text() });
   } catch (error) {
-    console.error('Claude Chat Error:', error);
+    console.error('Gemini Chat Error:', error);
     throw new ApiError(500, 'Failed to connect to the AI assistant');
   }
 });
