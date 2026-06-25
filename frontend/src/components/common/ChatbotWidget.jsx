@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { MessageSquare, X, Send, User, Bot, Loader2 } from 'lucide-react';
-import api from '../../services/api';
+import { api } from '../../services/api';
 
 const ChatbotWidget = () => {
   const { user } = useAuth();

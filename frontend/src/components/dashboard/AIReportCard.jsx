@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Loader2, AlertCircle } from 'lucide-react';
-import api from '../../services/api';
+import { api } from '../../services/api';
 
 const AIReportCard = () => {
   const [loading, setLoading] = useState(false);
