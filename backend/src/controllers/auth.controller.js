@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { withTransaction, query } from '../config/db.js';
 import { ApiError } from '../utils/ApiError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
@@ -356,4 +357,73 @@ export const updateNotificationPreferences = asyncHandler(async (req, res) => {
   );
 
   res.json({ notification_preferences: rows[0].notification_preferences });
+});
+
+export const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  if (!email) throw new ApiError(400, 'Email is required');
+
+  const user = await findUserByEmail(email);
+  if (!user) {
+    return res.json({
+      message: 'If an account with that email exists, a reset link has been generated.',
+    });
+  }
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  await query('INSERT INTO password_resets (user_id, token, expires_at) VALUES ($1, $2, $3)', [
+    user.id,
+    token,
+    expiresAt,
+  ]);
+
+  const resetLink = `${env.appUrl || 'http://localhost:5173'}/reset-password?token=${token}`;
+
+  console.log('\\n================================================');
+  console.log('🔒 PASSWORD RESET LINK GENERATED 🔒');
+  console.log(`To: ${user.email}`);
+  console.log(`Link: ${resetLink}`);
+  console.log('================================================\\n');
+
+  res.json({ message: 'If an account with that email exists, a reset link has been generated.' });
+});
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    throw new ApiError(400, 'Token and new password are required');
+  }
+
+  if (newPassword.length < 8) {
+    throw new ApiError(400, 'Password must be at least 8 characters');
+  }
+
+  const { rows } = await query(
+    'SELECT * FROM password_resets WHERE token = $1 AND used = false AND expires_at > NOW()',
+    [token]
+  );
+
+  if (rows.length === 0) {
+    throw new ApiError(400, 'Invalid or expired reset token');
+  }
+
+  const resetRecord = rows[0];
+
+  await withTransaction(async client => {
+    const passwordHash = await hashPassword(newPassword);
+
+    await client.query('UPDATE users SET password_hash = $2 WHERE id = $1', [
+      passwordHash,
+      resetRecord.user_id,
+    ]);
+    await client.query('UPDATE password_resets SET used = true WHERE id = $1', [resetRecord.id]);
+    await client.query('UPDATE users SET refresh_token_hash = NULL WHERE id = $1', [
+      resetRecord.user_id,
+    ]);
+  });
+
+  res.json({ message: 'Password has been successfully reset' });
 });

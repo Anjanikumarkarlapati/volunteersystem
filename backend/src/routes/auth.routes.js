@@ -15,6 +15,8 @@ import {
   register,
   updateNotificationPreferences,
   updateProfile,
+  forgotPassword,
+  resetPassword,
 } from '../controllers/auth.controller.js';
 
 const router = Router();
@@ -61,6 +63,22 @@ router.post(
   '/google/link',
   [body('idToken').notEmpty(), body('email').isEmail(), body('password').notEmpty(), validate],
   linkGoogleAccount
+);
+
+router.post(
+  '/forgot-password',
+  [body('email').isEmail({ require_tld: false }).normalizeEmail({ all_lowercase: true }), validate],
+  forgotPassword
+);
+
+router.post(
+  '/reset-password',
+  [
+    body('token').notEmpty(),
+    body('newPassword').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+    validate,
+  ],
+  resetPassword
 );
 
 router.post('/refresh', [body('refreshToken').notEmpty(), validate], refresh);

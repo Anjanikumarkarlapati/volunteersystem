@@ -5,6 +5,8 @@ import DashboardLayout from './layouts/DashboardLayout.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
+import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import OAuthRoleSelection from './pages/OAuthRoleSelection.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import DiscoverPage from './pages/DiscoverPage.jsx';
@@ -32,6 +34,8 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/oauth/role-selection" element={<OAuthRoleSelection />} />
 
         <Route

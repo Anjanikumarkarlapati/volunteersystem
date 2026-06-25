@@ -316,9 +316,17 @@ export default function LoginPage() {
 
                 {/* Password */}
                 <div className="space-y-2">
-                  <label className="block text-[11px] font-semibold uppercase tracking-widest text-on-surface">
-                    Password
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-semibold uppercase tracking-widest text-on-surface">
+                      Password
+                    </label>
+                    <Link
+                      to="/forgot-password"
+                      className="text-[11px] font-bold tracking-wide text-on-surface-variant hover:text-[#1b1c1a] transition-colors"
+                    >
+                      Forgot Password?
+                    </Link>
+                  </div>
                   <div className="flex rounded-xl border border-outline-variant bg-surface-container-low transition focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
                     <input
                       className="w-full rounded-l-xl bg-transparent px-4 py-3.5 text-sm text-on-surface outline-none placeholder:text-on-surface-variant"
