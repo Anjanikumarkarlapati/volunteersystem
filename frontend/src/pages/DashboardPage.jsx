@@ -20,6 +20,7 @@ import DataTable from '../components/DataTable.jsx';
 import Badge from '../components/ui/Badge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import { Skeleton } from '../components/ui/Skeleton.jsx';
+import AIReportCard from '../components/dashboard/AIReportCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   adminService,
@@ -521,6 +522,9 @@ export default function DashboardPage() {
           emptyDescription="Activity will appear here as you engage with the platform."
         />
       </section>
+
+      {/* AI Summary Card for Admins */}
+      {user.role === 'admin' && <AIReportCard />}
     </div>
   );
 }
