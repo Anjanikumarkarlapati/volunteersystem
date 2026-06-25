@@ -13,6 +13,7 @@ import reportRoutes from './report.routes.js';
 import uploadRoutes from './upload.routes.js';
 import feedbackRoutes from './feedback.routes.js';
 import squadRoutes from './squad.routes.js';
+import aiRoutes from './ai.js';
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use('/reports', reportRoutes);
 router.use('/uploads', uploadRoutes);
 router.use('/feedback', feedbackRoutes);
 router.use('/squads', squadRoutes);
+router.use('/ai', aiRoutes);
 
 export default router;
