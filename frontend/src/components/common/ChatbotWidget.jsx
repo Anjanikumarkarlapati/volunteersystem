@@ -125,7 +125,7 @@ const ChatbotWidget = () => {
     setIsLoading(true);
 
     try {
-      const response = await api.post('/chat', {
+      const response = await api.post('/ai/chat', {
         message: text,
         system: context.systemPrompt,
       });

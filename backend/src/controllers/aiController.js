@@ -93,3 +93,23 @@ Provide your response in raw JSON format matching this exact schema, without any
     throw new ApiError(500, 'Failed to generate AI recommendations');
   }
 });
+
+export const chatWithAssistant = asyncHandler(async (req, res) => {
+  const { message, system } = req.body;
+  if (!message) throw new ApiError(400, 'Message is required');
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-3-7-sonnet-20250219',
+      max_tokens: 1000,
+      temperature: 0.7,
+      system: system || 'You are a helpful assistant for the VolunteerMS platform.',
+      messages: [{ role: 'user', content: message }],
+    });
+
+    res.json({ reply: response.content[0].text });
+  } catch (error) {
+    console.error('Claude Chat Error:', error);
+    throw new ApiError(500, 'Failed to connect to the AI assistant');
+  }
+});
