@@ -1,5 +1,6 @@
 import { ChevronDown, Filter, Plus, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageHeader from '../components/PageHeader.jsx';
@@ -214,7 +215,23 @@ function CreateModal({ onClose, onSave }) {
 
 export default function OpportunitiesPage() {
   const { user } = useAuth();
-  const [filters, setFilters] = useState({ search: '', category: '', location: '', remote: '' });
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+
+  const [filters, setFilters] = useState({
+    search: initialSearch,
+    category: '',
+    location: '',
+    remote: '',
+  });
+
+  // Keep filters in sync if URL search param changes
+  useEffect(() => {
+    const s = searchParams.get('search');
+    if (s !== null && s !== filters.search) {
+      setFilters(c => ({ ...c, search: s }));
+    }
+  }, [searchParams]);
   const debouncedSearch = useDebounce(filters.search);
   const [opportunities, setOpportunities] = useState([]);
   const [loading, setLoading] = useState(true);

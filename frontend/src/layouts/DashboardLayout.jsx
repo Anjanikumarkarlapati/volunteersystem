@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
 import { notificationService } from '../services/resources.js';
@@ -231,11 +231,21 @@ export default function DashboardLayout() {
   const { user, logout } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = e => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/opportunities?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
 
   const refreshUnread = () => {
     notificationService
@@ -360,14 +370,19 @@ export default function DashboardLayout() {
             </div>
 
             {/* Search */}
-            <div className="relative ml-auto hidden md:flex items-center max-w-xs w-full">
+            <form
+              onSubmit={handleSearch}
+              className="relative ml-auto hidden md:flex items-center max-w-xs w-full"
+            >
               <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
               <input
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="h-9 w-full rounded-full border border-outline-variant bg-surface-container-low pl-10 pr-4 text-sm text-on-surface outline-none transition placeholder:text-on-surface-variant focus:border-primary focus:ring-1 focus:ring-primary"
                 placeholder="Search resources, events..."
                 aria-label="Search"
               />
-            </div>
+            </form>
 
             {/* Actions */}
             <div className="flex items-center gap-2">
