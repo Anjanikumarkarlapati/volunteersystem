@@ -28,35 +28,39 @@ _This workflow highlights the integration of the AI Matchmaking engine, which al
 
 ```mermaid
 flowchart TD
-    %% Styling
     classDef userAction fill:#eff6ff,stroke:#3b82f6,stroke-width:2px,color:#1e40af
     classDef systemAction fill:#f3f4f6,stroke:#9ca3af,stroke-width:2px,color:#374151
     classDef decision fill:#fef08a,stroke:#eab308,stroke-width:2px,color:#854d0e
     classDef success fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#166534
 
-    Start(["Secure Login via JWT/OAuth"]) :::userAction --> Dashboard["View Volunteer Dashboard"] :::userAction
-    Dashboard --> AI_Match{"Engage AI Matchmaker?"} :::decision
+    Start(["Secure Login via JWT/OAuth"]) --> Dashboard["View Volunteer Dashboard"]
+    Dashboard --> AI_Match{"Engage AI Matchmaker?"}
 
-    AI_Match -- Yes --> AI_Endpoint["Backend: /api/ai/recommendations"] :::systemAction
-    AI_Endpoint --> AI_Display["Render Top 3 Personalized Events"] :::systemAction
-    AI_Display --> Apply["Submit Formal Application"] :::userAction
+    AI_Match -- Yes --> AI_Endpoint["Backend: /api/ai/recommendations"]
+    AI_Endpoint --> AI_Display["Render Top 3 Personalized Events"]
+    AI_Display --> Apply["Submit Formal Application"]
 
-    AI_Match -- No --> Discover["Execute Manual Filter & Search"] :::userAction
+    AI_Match -- No --> Discover["Execute Manual Filter & Search"]
     Discover --> Apply
 
-    Apply --> Wait{"Organization Review Status"} :::decision
+    Apply --> Wait{"Organization Review Status"}
     Wait -- Rejected --> Dashboard
-    Wait -- Waitlisted --> Notification["Receive Waitlist Queue Notification"] :::systemAction
-    Wait -- Approved --> AutoSchedule["System Generates Individual Event Schedule"] :::systemAction
+    Wait -- Waitlisted --> Notification["Receive Waitlist Queue Notification"]
+    Wait -- Approved --> AutoSchedule["System Generates Individual Event Schedule"]
 
-    AutoSchedule --> Attend["Physical Attendance at Event"] :::userAction
-    Attend --> CheckIn["Execute Self Check-in via Portal"] :::userAction
-    CheckIn --> OrgVerify{"Organization Verification"} :::decision
+    AutoSchedule --> Attend["Physical Attendance at Event"]
+    Attend --> CheckIn["Execute Self Check-in via Portal"]
+    CheckIn --> OrgVerify{"Organization Verification"}
 
-    OrgVerify -- Denied --> Dispute["Hours Invalidated / Flagged"] :::systemAction
-    OrgVerify -- Approved --> HoursCredit["Earn Verified Service Hours!"] :::success
+    OrgVerify -- Denied --> Dispute["Hours Invalidated / Flagged"]
+    OrgVerify -- Approved --> HoursCredit["Earn Verified Service Hours!"]
 
-    HoursCredit --> Feedback["Submit Post-Event Rating"] :::userAction
+    HoursCredit --> Feedback["Submit Post-Event Rating"]
+
+    class Start,Dashboard,Apply,Discover,Attend,CheckIn,Feedback userAction
+    class AI_Endpoint,AI_Display,Notification,AutoSchedule,Dispute systemAction
+    class AI_Match,Wait,OrgVerify decision
+    class HoursCredit success
 ```
 
 ---
@@ -69,32 +73,35 @@ _This workflow outlines the strict lifecycle of an 'Opportunity' state machine, 
 
 ```mermaid
 flowchart TD
-    %% Styling
     classDef orgAction fill:#f0fdf4,stroke:#22c55e,stroke-width:2px,color:#166534
     classDef systemAction fill:#f3f4f6,stroke:#9ca3af,stroke-width:2px,color:#374151
     classDef decision fill:#fef08a,stroke:#eab308,stroke-width:2px,color:#854d0e
 
-    Start(["Register Organization Profile"]) :::orgAction --> CheckVerify{"Is Account Verified by Admin?"} :::decision
+    Start(["Register Organization Profile"]) --> CheckVerify{"Is Account Verified by Admin?"}
 
-    CheckVerify -- No --> WaitAdmin["Account Restricted: Wait for Admin KYC"] :::systemAction
-    CheckVerify -- Yes --> CreateOpp["Draft Volunteer Opportunity"] :::orgAction
+    CheckVerify -- No --> WaitAdmin["Account Restricted: Wait for Admin KYC"]
+    CheckVerify -- Yes --> CreateOpp["Draft Volunteer Opportunity"]
 
-    CreateOpp --> SetDetails["Configure Capacity, Skills, & Timeframes"] :::orgAction
-    SetDetails --> Publish["Publish Opportunity to Global Feed"] :::systemAction
+    CreateOpp --> SetDetails["Configure Capacity, Skills, & Timeframes"]
+    SetDetails --> Publish["Publish Opportunity to Global Feed"]
 
-    Publish --> ReceiveApps["Aggregate Incoming Applications"] :::systemAction
-    ReceiveApps --> ReviewApps{"Process Applicant"} :::decision
+    Publish --> ReceiveApps["Aggregate Incoming Applications"]
+    ReceiveApps --> ReviewApps{"Process Applicant"}
 
-    ReviewApps -- Reject --> RejectEmail["Trigger Rejection Protocol"] :::systemAction
-    ReviewApps -- Waitlist --> WaitlistQueue["Add to Operational Queue"] :::systemAction
-    ReviewApps -- Approve --> Assign["Assign Volunteer to Specific Shift"] :::systemAction
+    ReviewApps -- Reject --> RejectEmail["Trigger Rejection Protocol"]
+    ReviewApps -- Waitlist --> WaitlistQueue["Add to Operational Queue"]
+    ReviewApps -- Approve --> Assign["Assign Volunteer to Specific Shift"]
 
-    Assign --> EventDay["Execute Event / Operations"] :::orgAction
-    EventDay --> PostEvent["Initiate Post-Event Processing"] :::systemAction
+    Assign --> EventDay["Execute Event / Operations"]
+    EventDay --> PostEvent["Initiate Post-Event Processing"]
 
-    PostEvent --> Verify["Audit Volunteer Check-ins"] :::orgAction
-    Verify --> RateVol["Submit Volunteer Reliability Rating"] :::orgAction
-    RateVol --> CloseEvent["Transition Event to 'Completed' State"] :::systemAction
+    PostEvent --> Verify["Audit Volunteer Check-ins"]
+    Verify --> RateVol["Submit Volunteer Reliability Rating"]
+    RateVol --> CloseEvent["Transition Event to 'Completed' State"]
+
+    class Start,CreateOpp,SetDetails,EventDay,Verify,RateVol orgAction
+    class WaitAdmin,Publish,ReceiveApps,RejectEmail,WaitlistQueue,Assign,PostEvent,CloseEvent systemAction
+    class CheckVerify,ReviewApps decision
 ```
 
 ---
@@ -107,27 +114,31 @@ _This workflow emphasizes the high-level moderation capabilities required to run
 
 ```mermaid
 flowchart TD
-    %% Styling
     classDef adminAction fill:#faf5ff,stroke:#a855f7,stroke-width:2px,color:#6b21a8
     classDef systemAction fill:#f3f4f6,stroke:#9ca3af,stroke-width:2px,color:#374151
     classDef decision fill:#fef08a,stroke:#eab308,stroke-width:2px,color:#854d0e
     classDef danger fill:#fef2f2,stroke:#ef4444,stroke-width:2px,color:#991b1b
 
-    Start(["Secure Admin Login"]) :::adminAction --> MainDash["Access Global Dashboard"] :::adminAction
+    Start(["Secure Admin Login"]) --> MainDash["Access Global Dashboard"]
 
-    MainDash --> ActionChoice{"Select Operational Task"} :::decision
+    MainDash --> ActionChoice{"Select Operational Task"}
 
-    ActionChoice -- Strategic Analysis --> AI_Report["Trigger 'Generate AI Report'"] :::adminAction
-    AI_Report --> AI_Summary["Backend Fetches Live KPIs -> Sends to Gemini API"] :::systemAction
-    AI_Summary --> ReadReport["Review Generated Health Summary"] :::adminAction
+    ActionChoice -- Strategic Analysis --> AI_Report["Trigger 'Generate AI Report'"]
+    AI_Report --> AI_Summary["Backend Fetches Live KPIs -> Sends to Gemini API"]
+    AI_Summary --> ReadReport["Review Generated Health Summary"]
 
-    ActionChoice -- Organization Moderation --> ReviewOrg["Review Pending Organization KYC"] :::adminAction
-    ReviewOrg --> OrgDecision{"Is Organization Legitimate?"} :::decision
-    OrgDecision -- Approve --> UnlockOrg["Unlock Organization Read/Write Access"] :::systemAction
-    OrgDecision -- Reject --> BlockOrg["Hard Delete / Block Organization Account"] :::danger
+    ActionChoice -- Organization Moderation --> ReviewOrg["Review Pending Organization KYC"]
+    ReviewOrg --> OrgDecision{"Is Organization Legitimate?"}
+    OrgDecision -- Approve --> UnlockOrg["Unlock Organization Read/Write Access"]
+    OrgDecision -- Reject --> BlockOrg["Hard Delete / Block Organization Account"]
 
-    ActionChoice -- User Moderation --> ViewFlags["Audit Flagged Users & Poor Ratings"] :::adminAction
-    ViewFlags --> UserDecision{"Does User Violate TOS?"} :::decision
-    UserDecision -- No --> ClearFlag["Clear Warning / Dismiss Flag"] :::systemAction
-    UserDecision -- Yes --> SuspendUser["Execute Account Suspension / IP Ban"] :::danger
+    ActionChoice -- User Moderation --> ViewFlags["Audit Flagged Users & Poor Ratings"]
+    ViewFlags --> UserDecision{"Does User Violate TOS?"}
+    UserDecision -- No --> ClearFlag["Clear Warning / Dismiss Flag"]
+    UserDecision -- Yes --> SuspendUser["Execute Account Suspension / IP Ban"]
+
+    class Start,MainDash,AI_Report,ReadReport,ReviewOrg,ViewFlags adminAction
+    class AI_Summary,UnlockOrg,ClearFlag systemAction
+    class ActionChoice,OrgDecision,UserDecision decision
+    class BlockOrg,SuspendUser danger
 ```
