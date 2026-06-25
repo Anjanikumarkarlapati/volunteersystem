@@ -23,7 +23,6 @@ const ChatbotWidget = () => {
       - Applying for opportunities and checking application status
       - Registering for events and viewing their event schedule
       - Viewing their attendance history and volunteer hours
-      - Downloading their certificates
       - Updating their skills, interests, and availability
       
       You must REFUSE to help with or discuss:
@@ -38,8 +37,8 @@ const ChatbotWidget = () => {
       suggestions: [
         'How do I apply for an opportunity?',
         'Where can I see my volunteer hours?',
-        'How do I download my certificate?',
         'How do I update my skills?',
+        'How do I find new events?',
       ],
       title: 'Volunteer Assistant',
     },
@@ -52,7 +51,6 @@ const ChatbotWidget = () => {
       - Reviewing and approving/rejecting volunteer applications
       - Creating and managing events
       - Marking volunteer attendance at events
-      - Issuing certificates to volunteers
       - Viewing their organization dashboard and reports
       - Updating their organization profile
       
@@ -69,7 +67,7 @@ const ChatbotWidget = () => {
         'How do I create a new opportunity?',
         'How do I approve a volunteer application?',
         'How do I mark attendance for an event?',
-        'How do I issue a certificate?',
+        'How do I view my reports?',
       ],
       title: 'Organization Assistant',
     },
