@@ -36,7 +36,7 @@ import PageHeader from '../components/PageHeader.jsx';
 import StatCard from '../components/StatCard.jsx';
 import Badge from '../components/ui/Badge.jsx';
 import { getApiErrorMessage } from '../services/api.js';
-import { adminService, eventService } from '../services/resources.js';
+import { adminService, eventService, applicationService } from '../services/resources.js';
 import Button from '../components/ui/Button.jsx';
 
 const TABS = [
@@ -332,6 +332,34 @@ export default function AdminUsersPage() {
       toast.error(getApiErrorMessage(e, 'Could not load report'));
     } finally {
       setVsReportLoading(false);
+    }
+  };
+
+  const handleVsMarkAttendance = async (attendanceId, status) => {
+    try {
+      await eventService.updateAttendance(attendanceId, { status });
+      toast.success(status === 'attended' ? '✅ Marked completed' : '❌ Marked absent');
+      if (vsReport?.volunteer?.id) {
+        // Refresh the report in background
+        const report = await adminService.volunteerReport(vsReport.volunteer.id);
+        setVsReport(report);
+      }
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, 'Attendance update failed'));
+    }
+  };
+
+  const handleVsUpdateApplication = async (applicationId, status) => {
+    try {
+      await applicationService.setStatus(applicationId, { status });
+      toast.success(status === 'approved' ? '✅ Application approved' : '❌ Application rejected');
+      if (vsReport?.volunteer?.id) {
+        // Refresh the report in background
+        const report = await adminService.volunteerReport(vsReport.volunteer.id);
+        setVsReport(report);
+      }
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, 'Application update failed'));
     }
   };
 
@@ -1184,6 +1212,26 @@ export default function AdminUsersPage() {
                                     {Number(att.hours || 0).toFixed(1)} hrs
                                   </span>
                                   <Badge status={att.status} />
+                                  {att.status === 'assigned' && (
+                                    <div className="flex gap-1 ml-2">
+                                      <Button
+                                        variant="subtle"
+                                        size="xs"
+                                        className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 border-0 rounded-full h-7 px-2"
+                                        onClick={() => handleVsMarkAttendance(att.id, 'attended')}
+                                      >
+                                        <CheckCircle2 className="h-3 w-3 mr-1" /> Present
+                                      </Button>
+                                      <Button
+                                        variant="subtle"
+                                        size="xs"
+                                        className="bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 border-0 rounded-full h-7 px-2"
+                                        onClick={() => handleVsMarkAttendance(att.id, 'no_show')}
+                                      >
+                                        <X className="h-3 w-3 mr-1" /> Absent
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               </motion.div>
                             ))}
@@ -1234,7 +1282,33 @@ export default function AdminUsersPage() {
                                     )}
                                   </div>
                                 </div>
-                                <Badge status={app.status} />
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <Badge status={app.status} />
+                                  {app.status === 'pending' && (
+                                    <div className="flex gap-1 ml-2">
+                                      <Button
+                                        variant="subtle"
+                                        size="xs"
+                                        className="bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 border-0 rounded-full h-7 px-2"
+                                        onClick={() =>
+                                          handleVsUpdateApplication(app.id, 'approved')
+                                        }
+                                      >
+                                        <CheckCircle2 className="h-3 w-3 mr-1" /> Approve
+                                      </Button>
+                                      <Button
+                                        variant="subtle"
+                                        size="xs"
+                                        className="bg-rose-500/10 text-rose-700 hover:bg-rose-500/20 border-0 rounded-full h-7 px-2"
+                                        onClick={() =>
+                                          handleVsUpdateApplication(app.id, 'rejected')
+                                        }
+                                      >
+                                        <X className="h-3 w-3 mr-1" /> Reject
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
                               </motion.div>
                             ))}
                           </div>

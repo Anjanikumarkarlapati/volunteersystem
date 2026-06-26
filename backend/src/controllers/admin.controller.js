@@ -360,7 +360,7 @@ export const getVolunteerFullReport = asyncHandler(async (req, res) => {
     ),
     query(
       `SELECT att.*, e.title AS event_title, e.start_at, e.end_at, e.location AS event_location,
-              org.name AS organization_name, e.category AS event_category
+              org.name AS organization_name
        FROM attendance att
        JOIN events e ON e.id = att.event_id
        JOIN organizations org ON org.id = e.organization_id
