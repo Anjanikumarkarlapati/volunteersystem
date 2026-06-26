@@ -14,6 +14,8 @@ import {
   assignTask,
   getPendingOpportunities,
   changeOpportunityStatus,
+  searchVolunteerByQuery,
+  getVolunteerFullReport,
 } from '../controllers/admin.controller.js';
 
 const router = Router();
@@ -40,6 +42,14 @@ router.get(
   '/volunteers/:id/tasks',
   [param('id').isString().trim().isLength({ min: 36, max: 36 }), validate],
   getVolunteerCompletedTasks
+);
+
+// Volunteer Search & Full Report
+router.get('/volunteers/search', searchVolunteerByQuery);
+router.get(
+  '/volunteers/:id/report',
+  [param('id').isString().trim().isLength({ min: 36, max: 36 }), validate],
+  getVolunteerFullReport
 );
 
 // Opportunity Approvals

@@ -316,3 +316,100 @@ export const changeOpportunityStatus = asyncHandler(async (req, res) => {
 
   res.json(rows[0]);
 });
+
+// Admin – search volunteer by volunteer_id (UUID or prefix) or name/email
+export const searchVolunteerByQuery = asyncHandler(async (req, res) => {
+  const q = (req.query.q || '').trim();
+  if (!q) throw new ApiError(400, 'Query parameter q is required');
+
+  // Try to find matching volunteers by volunteer ID prefix, or user name/email
+  const searchResult = await query(
+    `SELECT
+       v.id AS volunteer_id,
+       u.id AS user_id,
+       u.name,
+       u.email,
+       u.status AS account_status,
+       u.created_at AS joined_at,
+       v.phone, v.location, v.bio, v.skills, v.interests, v.total_hours,
+       v.profile_picture_url, v.volunteer_type, v.institution, v.field_of_study,
+       v.linkedin_url, v.github_url
+     FROM volunteers v
+     JOIN users u ON u.id = v.user_id
+     WHERE v.id::text ILIKE $1
+        OR v.id::text = $2
+        OR u.name ILIKE $1
+        OR u.email ILIKE $1
+     ORDER BY u.name ASC
+     LIMIT 10`,
+    [`%${q}%`, q]
+  );
+
+  res.json({ data: searchResult.rows });
+});
+
+// Admin – get full detailed report for a specific volunteer_id (UUID)
+export const getVolunteerFullReport = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const [volunteerInfo, attendanceHistory, applicationHistory, certHistory] = await Promise.all([
+    query(
+      `SELECT v.*, u.name, u.email, u.status AS account_status, u.created_at AS joined_at
+       FROM volunteers v JOIN users u ON u.id = v.user_id WHERE v.id = $1`,
+      [id]
+    ),
+    query(
+      `SELECT att.*, e.title AS event_title, e.start_at, e.end_at, e.location AS event_location,
+              org.name AS organization_name, e.category AS event_category
+       FROM attendance att
+       JOIN events e ON e.id = att.event_id
+       JOIN organizations org ON org.id = e.organization_id
+       WHERE att.volunteer_id = $1 ORDER BY e.start_at DESC`,
+      [id]
+    ),
+    query(
+      `SELECT app.*, op.title AS opportunity_title, op.category, op.location AS op_location,
+              org.name AS organization_name, app.applied_at
+       FROM applications app
+       JOIN opportunities op ON op.id = app.opportunity_id
+       JOIN organizations org ON org.id = op.organization_id
+       WHERE app.volunteer_id = $1 ORDER BY app.applied_at DESC`,
+      [id]
+    ),
+    query(
+      `SELECT c.*, e.title AS event_title, e.start_at AS event_date
+       FROM certificates c LEFT JOIN events e ON e.id = c.event_id
+       WHERE c.volunteer_id = $1 ORDER BY c.issued_at DESC`,
+      [id]
+    ),
+  ]);
+
+  if (!volunteerInfo.rows[0]) throw new ApiError(404, 'Volunteer not found');
+
+  const vol = volunteerInfo.rows[0];
+  const attendance = attendanceHistory.rows;
+  const applications = applicationHistory.rows;
+  const certificates = certHistory.rows;
+
+  // Compute stats
+  const totalHours = attendance
+    .filter(a => a.status === 'attended')
+    .reduce((sum, a) => sum + Number(a.hours || 0), 0);
+  const completedEvents = attendance.filter(a => a.status === 'attended').length;
+  const approvedApplications = applications.filter(a => a.status === 'approved').length;
+
+  res.json({
+    volunteer: { ...vol, computed_hours: totalHours },
+    attendance,
+    applications,
+    certificates,
+    stats: {
+      total_events: attendance.length,
+      completed_events: completedEvents,
+      total_hours: totalHours,
+      total_applications: applications.length,
+      approved_applications: approvedApplications,
+      certificates_earned: certificates.length,
+    },
+  });
+});

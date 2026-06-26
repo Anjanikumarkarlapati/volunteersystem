@@ -2,23 +2,31 @@ import {
   Activity,
   Award,
   BarChart3,
+  BookOpen,
   Calendar,
   CheckCircle2,
   ClipboardList,
   Clock,
   Copy,
   Eye,
+  FileText,
   Filter,
   LayoutDashboard,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
   Search,
   Shield,
   ShieldCheck,
   ShieldOff,
   TrendingUp,
   UserCheck,
+  UserSearch,
   Users,
   X,
 } from 'lucide-react';
+
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,6 +44,7 @@ const TABS = [
   { id: 'users', label: 'Users', Icon: Users },
   { id: 'profiles', label: 'Profiles', Icon: UserCheck },
   { id: 'attendance', label: 'Attendance', Icon: ClipboardList },
+  { id: 'volunteer-search', label: 'Volunteer Search', Icon: UserSearch },
   { id: 'monitoring', label: 'Monitoring', Icon: Activity },
 ];
 
@@ -186,6 +195,14 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
 
+  // Volunteer Search state
+  const [vsQuery, setVsQuery] = useState('');
+  const [vsSuggestions, setVsSuggestions] = useState([]);
+  const [vsSearching, setVsSearching] = useState(false);
+  const [vsReport, setVsReport] = useState(null);
+  const [vsReportLoading, setVsReportLoading] = useState(false);
+  const [vsReportTab, setVsReportTab] = useState('attendance');
+
   const loadDashboard = useCallback(async () => {
     setLoading(true);
     try {
@@ -283,6 +300,38 @@ export default function AdminUsersPage() {
       setDetailVolunteer(detail);
     } catch (e) {
       toast.error(getApiErrorMessage(e, 'Could not load volunteer details'));
+    }
+  };
+
+  // Volunteer Search handlers
+  const handleVsSearch = async () => {
+    if (!vsQuery.trim()) return;
+    setVsSearching(true);
+    setVsSuggestions([]);
+    setVsReport(null);
+    try {
+      const res = await adminService.searchVolunteers(vsQuery.trim());
+      setVsSuggestions(res.data || []);
+      if ((res.data || []).length === 0) toast('No volunteers found', { icon: '🔍' });
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, 'Search failed'));
+    } finally {
+      setVsSearching(false);
+    }
+  };
+
+  const loadVsReport = async volunteerId => {
+    setVsReportLoading(true);
+    setVsReport(null);
+    setVsReportTab('attendance');
+    try {
+      const report = await adminService.volunteerReport(volunteerId);
+      setVsReport(report);
+      setVsSuggestions([]);
+    } catch (e) {
+      toast.error(getApiErrorMessage(e, 'Could not load report'));
+    } finally {
+      setVsReportLoading(false);
     }
   };
 
@@ -749,6 +798,580 @@ export default function AdminUsersPage() {
                 title="No monitoring logs"
                 description="Platform activity events will appear here."
               />
+            )}
+          </motion.div>
+        )}
+
+        {tab === 'volunteer-search' && (
+          <motion.div
+            key="volunteer-search"
+            className="space-y-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.22 }}
+          >
+            {/* Hero Search Panel */}
+            <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 shadow-2xl">
+              {/* Background decorations */}
+              <div className="absolute inset-0 opacity-10">
+                <div className="absolute -top-16 -right-16 h-64 w-64 rounded-full bg-white/30 blur-3xl" />
+                <div className="absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-white/20 blur-3xl" />
+              </div>
+              <div className="relative">
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                    <UserSearch className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-widest text-white/70">
+                    Admin Tool
+                  </span>
+                </div>
+                <h2 className="mb-1 text-2xl font-black text-white">Volunteer Search</h2>
+                <p className="mb-6 text-sm text-white/70">
+                  Search by Volunteer ID, name, or email to get a comprehensive activity report.
+                </p>
+                <div className="flex gap-3">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50" />
+                    <input
+                      id="vs-search-input"
+                      className="w-full rounded-2xl border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-3.5 pl-11 text-sm text-white placeholder:text-white/50 outline-none transition focus:border-white/50 focus:bg-white/15"
+                      placeholder="Enter Volunteer ID, name, or email…"
+                      value={vsQuery}
+                      onChange={e => setVsQuery(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleVsSearch()}
+                    />
+                  </div>
+                  <button
+                    id="vs-search-btn"
+                    onClick={handleVsSearch}
+                    disabled={vsSearching || !vsQuery.trim()}
+                    className="flex items-center gap-2 rounded-2xl bg-white px-6 py-3.5 text-sm font-bold text-violet-700 shadow-lg transition hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:scale-100"
+                  >
+                    {vsSearching ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                    Search
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Suggestions list */}
+            <AnimatePresence>
+              {vsSuggestions.length > 0 && !vsReport && (
+                <motion.div
+                  key="suggestions"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="rounded-[24px] border border-line/20 bg-white-card shadow-sm overflow-hidden"
+                >
+                  <div className="border-b border-line/10 px-5 py-3.5">
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted">
+                      {vsSuggestions.length} result{vsSuggestions.length !== 1 ? 's' : ''} found —
+                      select to view full report
+                    </p>
+                  </div>
+                  <div className="divide-y divide-line/10">
+                    {vsSuggestions.map((vol, i) => (
+                      <motion.button
+                        key={vol.volunteer_id}
+                        id={`vs-suggestion-${i}`}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        onClick={() => loadVsReport(vol.volunteer_id)}
+                        className="flex w-full items-center gap-4 px-5 py-4 text-left transition hover:bg-soft-card-2 group"
+                      >
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-indigo-500 text-sm font-bold text-white shadow-sm">
+                          {(vol.name || 'V')
+                            .split(' ')
+                            .map(p => p[0])
+                            .join('')
+                            .slice(0, 2)
+                            .toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-text truncate">{vol.name}</p>
+                          <p className="text-xs text-muted truncate">{vol.email}</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="font-mono text-[10px] text-muted">
+                            {vol.volunteer_id?.slice(0, 12)}…
+                          </p>
+                          <p className="text-[10px] text-muted capitalize">
+                            {vol.volunteer_type?.replace('_', ' ') || 'volunteer'}
+                          </p>
+                        </div>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/10 text-violet-600 transition group-hover:bg-violet-500 group-hover:text-white">
+                          <Eye className="h-3.5 w-3.5" />
+                        </div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Loading skeleton */}
+            {vsReportLoading && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-24 animate-pulse rounded-2xl bg-soft-card-2" />
+                  ))}
+                </div>
+                <div className="h-64 animate-pulse rounded-[32px] bg-soft-card-2" />
+              </div>
+            )}
+
+            {/* Full Report */}
+            <AnimatePresence>
+              {vsReport && !vsReportLoading && (
+                <motion.div
+                  key="report"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.28 }}
+                  className="space-y-6"
+                >
+                  {/* Profile Header */}
+                  <div className="relative overflow-hidden rounded-[32px] border border-line/20 bg-white-card p-6 shadow-sm">
+                    <div className="flex items-start gap-5">
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-gradient-to-br from-violet-500 to-indigo-500 text-xl font-black text-white shadow-lg">
+                        {(vsReport.volunteer?.name || 'V')
+                          .split(' ')
+                          .map(p => p[0])
+                          .join('')
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <h2 className="text-xl font-black text-text">
+                            {vsReport.volunteer?.name}
+                          </h2>
+                          <Badge status={vsReport.volunteer?.account_status || 'active'} />
+                          {vsReport.volunteer?.verified && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                              <ShieldCheck className="h-3 w-3" /> Verified
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+                          {vsReport.volunteer?.email && (
+                            <span className="flex items-center gap-1">
+                              <Mail className="h-3 w-3" /> {vsReport.volunteer.email}
+                            </span>
+                          )}
+                          {vsReport.volunteer?.phone && (
+                            <span className="flex items-center gap-1">
+                              <Phone className="h-3 w-3" /> {vsReport.volunteer.phone}
+                            </span>
+                          )}
+                          {vsReport.volunteer?.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" /> {vsReport.volunteer.location}
+                            </span>
+                          )}
+                          {vsReport.volunteer?.joined_at && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" /> Joined{' '}
+                              {new Date(vsReport.volunteer.joined_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </span>
+                          )}
+                        </div>
+                        {vsReport.volunteer?.bio && (
+                          <p className="mt-2 text-xs text-muted line-clamp-2">
+                            {vsReport.volunteer.bio}
+                          </p>
+                        )}
+                        {vsReport.volunteer?.skills?.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {(Array.isArray(vsReport.volunteer.skills)
+                              ? vsReport.volunteer.skills
+                              : []
+                            )
+                              .slice(0, 6)
+                              .map((s, i) => (
+                                <span
+                                  key={i}
+                                  className="rounded-full bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-violet-700"
+                                >
+                                  {s}
+                                </span>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted mb-1">
+                          Volunteer ID
+                        </p>
+                        <button
+                          className="inline-flex items-center gap-1.5 rounded-xl bg-soft-card-2 px-3 py-1.5 font-mono text-[11px] text-text hover:bg-soft-card transition-colors"
+                          onClick={() => {
+                            navigator.clipboard.writeText(vsReport.volunteer?.id || '');
+                            toast.success('ID copied!');
+                          }}
+                        >
+                          <Copy className="h-3 w-3" />
+                          {(vsReport.volunteer?.id || '').slice(0, 12)}…
+                        </button>
+                        <button
+                          onClick={() => {
+                            setVsReport(null);
+                            setVsSuggestions([]);
+                          }}
+                          className="mt-2 flex items-center gap-1 rounded-xl px-3 py-1.5 text-[11px] font-semibold text-muted hover:text-text hover:bg-soft-card-2 transition-colors"
+                        >
+                          <X className="h-3 w-3" /> Clear
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                    {[
+                      {
+                        label: 'Total Events',
+                        value: vsReport.stats?.total_events || 0,
+                        icon: Calendar,
+                        color: 'from-blue-500 to-cyan-400',
+                      },
+                      {
+                        label: 'Completed',
+                        value: vsReport.stats?.completed_events || 0,
+                        icon: CheckCircle2,
+                        color: 'from-emerald-500 to-teal-400',
+                      },
+                      {
+                        label: 'Hours',
+                        value: Number(vsReport.stats?.total_hours || 0).toFixed(1),
+                        icon: Clock,
+                        color: 'from-violet-500 to-purple-400',
+                      },
+                      {
+                        label: 'Applications',
+                        value: vsReport.stats?.total_applications || 0,
+                        icon: FileText,
+                        color: 'from-amber-500 to-orange-400',
+                      },
+                      {
+                        label: 'Approved',
+                        value: vsReport.stats?.approved_applications || 0,
+                        icon: ShieldCheck,
+                        color: 'from-green-500 to-emerald-400',
+                      },
+                      {
+                        label: 'Certificates',
+                        value: vsReport.stats?.certificates_earned || 0,
+                        icon: Award,
+                        color: 'from-rose-500 to-pink-400',
+                      },
+                    ].map(({ label, value, icon: Icon, color }, i) => (
+                      <motion.div
+                        key={label}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.06 }}
+                        className="rounded-2xl border border-line/20 bg-white-card p-4 text-center shadow-sm"
+                      >
+                        <div
+                          className={`mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${color}`}
+                        >
+                          <Icon className="h-4 w-4 text-white" />
+                        </div>
+                        <p className="text-xl font-black text-text">{value}</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted">
+                          {label}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Detail Tabs */}
+                  <div className="rounded-[32px] border border-line/20 bg-white-card shadow-sm overflow-hidden">
+                    {/* Tab bar */}
+                    <div className="flex gap-1 border-b border-line/10 bg-soft-card p-1.5">
+                      {[
+                        { id: 'attendance', label: 'Task History', icon: ClipboardList },
+                        { id: 'applications', label: 'Applications', icon: FileText },
+                        { id: 'certificates', label: 'Certificates', icon: Award },
+                      ].map(({ id, label, icon: Icon }) => (
+                        <button
+                          key={id}
+                          id={`vs-report-tab-${id}`}
+                          onClick={() => setVsReportTab(id)}
+                          className={`flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-semibold transition-all ${
+                            vsReportTab === id
+                              ? 'bg-white-card text-text shadow-sm'
+                              : 'text-muted hover:text-text'
+                          }`}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">{label}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Task History */}
+                    {vsReportTab === 'attendance' && (
+                      <div className="p-5">
+                        {vsReport.attendance?.length ? (
+                          <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+                            {vsReport.attendance.map((att, i) => (
+                              <motion.div
+                                key={att.id || i}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.03 }}
+                                className="flex items-center gap-4 rounded-2xl border border-line/20 p-3.5 hover:bg-soft-card-2 transition-all"
+                              >
+                                <div
+                                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                                    att.status === 'attended'
+                                      ? 'bg-emerald-500/10'
+                                      : att.status === 'no_show'
+                                        ? 'bg-rose-500/10'
+                                        : 'bg-amber-500/10'
+                                  }`}
+                                >
+                                  <ClipboardList
+                                    className={`h-4 w-4 ${
+                                      att.status === 'attended'
+                                        ? 'text-emerald-600'
+                                        : att.status === 'no_show'
+                                          ? 'text-rose-600'
+                                          : 'text-amber-600'
+                                    }`}
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-text truncate">
+                                    {att.event_title || 'Event'}
+                                  </p>
+                                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-[10px] text-muted">
+                                    <span>{att.organization_name}</span>
+                                    {att.event_location && (
+                                      <span className="flex items-center gap-0.5">
+                                        <MapPin className="h-2.5 w-2.5" />
+                                        {att.event_location}
+                                      </span>
+                                    )}
+                                    {att.start_at && (
+                                      <span>
+                                        {new Date(att.start_at).toLocaleDateString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric',
+                                        })}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-xs font-bold text-text">
+                                    {Number(att.hours || 0).toFixed(1)} hrs
+                                  </span>
+                                  <Badge status={att.status} />
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        ) : (
+                          <EmptyState
+                            title="No task history"
+                            description="This volunteer has no event attendance records."
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Applications */}
+                    {vsReportTab === 'applications' && (
+                      <div className="p-5">
+                        {vsReport.applications?.length ? (
+                          <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+                            {vsReport.applications.map((app, i) => (
+                              <motion.div
+                                key={app.id || i}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: i * 0.03 }}
+                                className="flex items-center gap-4 rounded-2xl border border-line/20 p-3.5 hover:bg-soft-card-2 transition-all"
+                              >
+                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
+                                  <FileText className="h-4 w-4 text-amber-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-semibold text-text truncate">
+                                    {app.opportunity_title || 'Opportunity'}
+                                  </p>
+                                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-[10px] text-muted">
+                                    <span>{app.organization_name}</span>
+                                    {app.category && (
+                                      <span className="capitalize">{app.category}</span>
+                                    )}
+                                    {app.applied_at && (
+                                      <span>
+                                        Applied{' '}
+                                        {new Date(app.applied_at).toLocaleDateString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                          year: 'numeric',
+                                        })}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <Badge status={app.status} />
+                              </motion.div>
+                            ))}
+                          </div>
+                        ) : (
+                          <EmptyState
+                            title="No applications"
+                            description="This volunteer has not applied to any opportunities."
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Certificates */}
+                    {vsReportTab === 'certificates' && (
+                      <div className="p-5">
+                        {vsReport.certificates?.length ? (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {vsReport.certificates.map((cert, i) => (
+                              <motion.div
+                                key={cert.id || i}
+                                initial={{ opacity: 0, scale: 0.97 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: i * 0.05 }}
+                                className="relative overflow-hidden rounded-2xl border border-amber-200/60 bg-gradient-to-br from-amber-50 to-orange-50 p-4"
+                              >
+                                <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-amber-500/10" />
+                                <div className="flex items-start gap-3">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/20">
+                                    <Award className="h-5 w-5 text-amber-600" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-bold text-text truncate">
+                                      {cert.event_title || 'Volunteer Certificate'}
+                                    </p>
+                                    <p className="text-xs text-muted mt-0.5">
+                                      Issued{' '}
+                                      {cert.issued_at
+                                        ? new Date(cert.issued_at).toLocaleDateString('en-US', {
+                                            month: 'long',
+                                            day: 'numeric',
+                                            year: 'numeric',
+                                          })
+                                        : '—'}
+                                    </p>
+                                    {cert.certificate_number && (
+                                      <p className="text-[10px] font-mono text-amber-700 mt-1">
+                                        #{cert.certificate_number}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        ) : (
+                          <EmptyState
+                            title="No certificates"
+                            description="This volunteer has not earned any certificates yet."
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Extra info: institution, bio */}
+                  {(vsReport.volunteer?.institution ||
+                    vsReport.volunteer?.field_of_study ||
+                    vsReport.volunteer?.linkedin_url) && (
+                    <div className="rounded-[24px] border border-line/20 bg-white-card p-5 shadow-sm">
+                      <h3 className="text-sm font-bold text-text mb-3 flex items-center gap-2">
+                        <BookOpen className="h-4 w-4 text-muted" /> Additional Info
+                      </h3>
+                      <div className="grid gap-2 sm:grid-cols-2 text-xs">
+                        {vsReport.volunteer?.institution && (
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-0.5">
+                              Institution
+                            </p>
+                            <p className="font-semibold text-text">
+                              {vsReport.volunteer.institution}
+                            </p>
+                          </div>
+                        )}
+                        {vsReport.volunteer?.field_of_study && (
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-0.5">
+                              Field of Study
+                            </p>
+                            <p className="font-semibold text-text">
+                              {vsReport.volunteer.field_of_study}
+                            </p>
+                          </div>
+                        )}
+                        {vsReport.volunteer?.volunteer_type && (
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-0.5">
+                              Volunteer Type
+                            </p>
+                            <p className="font-semibold text-text capitalize">
+                              {vsReport.volunteer.volunteer_type?.replace('_', ' ')}
+                            </p>
+                          </div>
+                        )}
+                        {vsReport.volunteer?.linkedin_url && (
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted mb-0.5">
+                              LinkedIn
+                            </p>
+                            <a
+                              href={vsReport.volunteer.linkedin_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="font-semibold text-blue-600 hover:underline truncate block"
+                            >
+                              {vsReport.volunteer.linkedin_url}
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Empty state: no query, no results, no report */}
+            {!vsReport && !vsReportLoading && vsSuggestions.length === 0 && !vsSearching && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-[28px] bg-gradient-to-br from-violet-500/10 to-indigo-500/10">
+                  <UserSearch className="h-9 w-9 text-violet-500" />
+                </div>
+                <h3 className="text-base font-bold text-text">Search for a Volunteer</h3>
+                <p className="mt-1 text-sm text-muted max-w-sm">
+                  Enter a volunteer ID (full UUID or partial), name, or email address to pull up
+                  their complete activity report.
+                </p>
+              </div>
             )}
           </motion.div>
         )}

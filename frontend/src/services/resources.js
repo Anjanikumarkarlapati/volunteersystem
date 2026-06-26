@@ -97,6 +97,11 @@ export const adminService = {
   pendingOpportunities: () => api.get('/admin/opportunities/pending').then(res => res.data),
   changeOpportunityStatus: (id, status) =>
     api.patch(`/admin/opportunities/${id}/status`, { status }).then(res => res.data),
+  // Volunteer Search
+  searchVolunteers: q =>
+    api.get('/admin/volunteers/search', { params: { q } }).then(res => res.data),
+  volunteerReport: volunteerId =>
+    api.get(`/admin/volunteers/${volunteerId}/report`).then(res => res.data),
 };
 
 export const reportService = {
