@@ -206,93 +206,65 @@ export const updateAttendance = asyncHandler(async (req, res) => {
 
   // Auto-notify volunteer when marked as attended (task completed)
   if (req.body.status === 'attended' && attendance.status !== 'attended') {
-    let shouldGenerateCertificate = false;
     let totalHours = parseFloat(updated.hours || 0);
 
-    if (attendance.notes?.includes('5 days')) {
-      // Check if all 5 are completed
-      const { rows: completedRows } = await query(
-        `SELECT SUM(hours) as total_hours, count(*) as count FROM attendance att
-         JOIN events e ON e.id = att.event_id
-         WHERE att.volunteer_id = $1 AND e.opportunity_id = $2 AND att.notes LIKE '%5 days%' AND att.status = 'attended'`,
-        [attendance.volunteer_id, attendance.opportunity_id]
-      );
-      if (completedRows[0].count >= 5) {
-        shouldGenerateCertificate = true;
-        totalHours = parseFloat(completedRows[0].total_hours || 0);
-      }
-    } else {
-      shouldGenerateCertificate = true;
-    }
+    // 1. Generate certificate
+    const certificateNumber = generateCertificateNumber();
+    const issuedAt = new Date();
 
-    if (shouldGenerateCertificate) {
-      // 1. Generate certificate
-      const certificateNumber = generateCertificateNumber();
-      const issuedAt = new Date();
+    // Fetch organization name
+    const orgResult = await query(`SELECT name FROM organizations WHERE id = $1`, [
+      attendance.organization_id,
+    ]);
+    const organizationName = orgResult.rows[0]?.name || 'Volunteer Hub';
 
-      // Fetch organization name
-      const orgResult = await query(`SELECT name FROM organizations WHERE id = $1`, [
-        attendance.organization_id,
-      ]);
-      const organizationName = orgResult.rows[0]?.name || 'Volunteer Hub';
+    const { fileUrl } = await generateCertificatePdf({
+      certificateNumber,
+      volunteerName: attendance.volunteer_name,
+      organizationName,
+      title: 'Certificate of Volunteer Service',
+      hours: totalHours,
+      issuedAt,
+      eventTitle: attendance.event_title,
+    });
 
-      const { fileUrl } = await generateCertificatePdf({
+    // Insert certificate record
+    const certResult = await query(
+      `INSERT INTO certificates (
+         volunteer_id, event_id, opportunity_id, certificate_number, title, hours, issued_by, issued_at, file_url, metadata
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        attendance.volunteer_id,
+        attendance.event_id,
+        attendance.opportunity_id,
         certificateNumber,
-        volunteerName: attendance.volunteer_name,
-        organizationName,
-        title: 'Certificate of Volunteer Service',
-        hours: totalHours,
+        'Certificate of Volunteer Service',
+        totalHours,
+        req.user.id,
         issuedAt,
+        fileUrl,
+        JSON.stringify({
+          eventTitle: attendance.event_title,
+          autoVerified: false,
+        }),
+      ]
+    );
+
+    await notifyUser({
+      userId: attendance.volunteer_user_id,
+      email: attendance.volunteer_email,
+      title: '✅ Task Completed & Certificate Ready!',
+      message: `Congratulations ${attendance.volunteer_name}! Your attendance for "${attendance.event_title}" has been confirmed. You earned ${totalHours} hours and your certificate is ready to download!`,
+      type: 'completion',
+      metadata: {
+        attendanceId: updated.id,
         eventTitle: attendance.event_title,
-      });
-
-      // Insert certificate record
-      const certResult = await query(
-        `INSERT INTO certificates (
-           volunteer_id, event_id, certificate_number, title, hours, issued_by, issued_at, file_url
-         )
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         RETURNING *`,
-        [
-          attendance.volunteer_id,
-          attendance.event_id,
-          certificateNumber,
-          'Certificate of Volunteer Service',
-          totalHours,
-          req.user.id,
-          issuedAt,
-          fileUrl,
-        ]
-      );
-
-      await notifyUser({
-        userId: attendance.volunteer_user_id,
-        email: attendance.volunteer_email,
-        title: '✅ Task Completed & Certificate Ready!',
-        message: `Congratulations ${attendance.volunteer_name}! Your attendance has been confirmed. You earned ${totalHours} hours of volunteer service and your certificate is ready to download!`,
-        type: 'completion',
-        metadata: {
-          attendanceId: updated.id,
-          eventTitle: attendance.event_title,
-          hours: totalHours,
-          certificateId: certResult.rows[0].id,
-        },
-      });
-    } else {
-      // Just notify task completion
-      await notifyUser({
-        userId: attendance.volunteer_user_id,
-        email: attendance.volunteer_email,
-        title: '✅ Task Completed!',
-        message: `Your attendance for "${attendance.event_title}" has been confirmed. You earned ${updated.hours || 0} hours. Complete all your daily tasks to get your certificate!`,
-        type: 'completion',
-        metadata: {
-          attendanceId: updated.id,
-          eventTitle: attendance.event_title,
-          hours: updated.hours,
-        },
-      });
-    }
+        hours: totalHours,
+        certificateId: certResult.rows[0].id,
+      },
+    });
   }
 
   // Auto-notify when marked as no_show
@@ -359,101 +331,61 @@ export const verifyAttendance = asyncHandler(async (req, res) => {
   if (newVerificationStatus === 'verified') {
     let totalHours = parseFloat(updated.hours || 0);
 
-    if (attendance.notes?.includes('5 days')) {
-      const { rows: completedRows } = await query(
-        `SELECT SUM(hours) as total_hours, count(*) as count FROM attendance att
-         JOIN events e ON e.id = att.event_id
-         WHERE att.volunteer_id = $1 AND e.opportunity_id = $2 AND att.notes LIKE '%5 days%' AND att.verification_status = 'verified'`,
-        [attendance.volunteer_id, attendance.opportunity_id]
-      );
-      if (completedRows[0].count >= 5) {
-        totalHours = parseFloat(completedRows[0].total_hours || 0);
+    // Auto-generate certificate for completed tasks
+    const certificateNumber = generateCertificateNumber();
+    const issuedAt = new Date();
 
-        // Auto-generate certificate for completed 5-day tasks
-        const certificateNumber = generateCertificateNumber();
-        const issuedAt = new Date();
+    const orgResult = await query(`SELECT name FROM organizations WHERE id = $1`, [
+      attendance.organization_id,
+    ]);
+    const organizationName = orgResult.rows[0]?.name || 'Volunteer Hub';
 
-        const orgResult = await query(`SELECT name FROM organizations WHERE id = $1`, [
-          attendance.organization_id,
-        ]);
-        const organizationName = orgResult.rows[0]?.name || 'Volunteer Hub';
+    const { fileUrl } = await generateCertificatePdf({
+      certificateNumber,
+      volunteerName: attendance.volunteer_name,
+      organizationName,
+      title: 'Certificate of Volunteer Service',
+      hours: totalHours,
+      issuedAt,
+      eventTitle: attendance.event_title,
+    });
 
-        const { fileUrl } = await generateCertificatePdf({
-          certificateNumber,
-          volunteerName: attendance.volunteer_name,
-          organizationName,
-          title: 'Certificate of Volunteer Service',
-          hours: totalHours,
-          issuedAt,
+    const certResult = await query(
+      `INSERT INTO certificates (
+         volunteer_id, event_id, opportunity_id, certificate_number, title, hours, issued_by, issued_at, file_url, metadata
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING *`,
+      [
+        attendance.volunteer_id,
+        attendance.event_id,
+        attendance.opportunity_id,
+        certificateNumber,
+        'Certificate of Volunteer Service',
+        totalHours,
+        req.user.id,
+        issuedAt,
+        fileUrl,
+        JSON.stringify({
           eventTitle: attendance.event_title,
-        });
+          autoVerified: true,
+        }),
+      ]
+    );
 
-        const certResult = await query(
-          `INSERT INTO certificates (
-             volunteer_id, event_id, opportunity_id, certificate_number, title, hours, issued_by, issued_at, file_url, metadata
-           )
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-           RETURNING *`,
-          [
-            attendance.volunteer_id,
-            attendance.event_id,
-            attendance.opportunity_id,
-            certificateNumber,
-            'Certificate of Volunteer Service',
-            totalHours,
-            req.user.id,
-            issuedAt,
-            fileUrl,
-            JSON.stringify({
-              eventTitle: attendance.event_title,
-              autoVerified: true,
-              fiveDayCompletion: true,
-            }),
-          ]
-        );
-
-        await notifyUser({
-          userId: attendance.volunteer_user_id,
-          email: attendance.volunteer_email,
-          title: '🎉 5-Day Challenge Complete & Certificate Ready!',
-          message: `Amazing ${attendance.volunteer_name}! You completed all 5 daily tasks. Your certificate for ${totalHours} hours is ready to download!`,
-          type: 'completion',
-          metadata: {
-            attendanceId: updated.id,
-            eventTitle: attendance.event_title,
-            hours: totalHours,
-            certificateId: certResult.rows[0].id,
-            fiveDayCompletion: true,
-          },
-        });
-      } else {
-        await notifyUser({
-          userId: attendance.volunteer_user_id,
-          email: attendance.volunteer_email,
-          title: '✅ Daily Task Verified!',
-          message: `Your daily task for "${attendance.event_title}" has been verified. ${completedRows[0].count}/5 days complete. Keep going!`,
-          type: 'completion',
-          metadata: {
-            attendanceId: updated.id,
-            eventTitle: attendance.event_title,
-            progress: `${completedRows[0].count}/5`,
-          },
-        });
-      }
-    } else {
-      await notifyUser({
-        userId: attendance.volunteer_user_id,
-        email: attendance.volunteer_email,
-        title: '✅ Task Verified!',
-        message: `Your attendance for "${attendance.event_title}" has been verified. You earned ${updated.hours || 0} hours.`,
-        type: 'completion',
-        metadata: {
-          attendanceId: updated.id,
-          eventTitle: attendance.event_title,
-          hours: updated.hours,
-        },
-      });
-    }
+    await notifyUser({
+      userId: attendance.volunteer_user_id,
+      email: attendance.volunteer_email,
+      title: '✅ Task Verified & Certificate Ready!',
+      message: `Amazing ${attendance.volunteer_name}! Your attendance for "${attendance.event_title}" has been verified. Your certificate for ${totalHours} hours is ready to download!`,
+      type: 'completion',
+      metadata: {
+        attendanceId: updated.id,
+        eventTitle: attendance.event_title,
+        hours: totalHours,
+        certificateId: certResult.rows[0].id,
+      },
+    });
   } else {
     await notifyUser({
       userId: attendance.volunteer_user_id,
