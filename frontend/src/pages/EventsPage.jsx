@@ -23,7 +23,13 @@ import PageHeader from '../components/PageHeader.jsx';
 import Badge from '../components/ui/Badge.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { getApiErrorMessage } from '../services/api.js';
-import { attendanceService, eventService, profileService } from '../services/resources.js';
+import {
+  attendanceService,
+  eventService,
+  profileService,
+  adminService,
+  opportunityService,
+} from '../services/resources.js';
 import Button from '../components/ui/Button.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import LocationPicker from '../components/LocationPicker.jsx';
@@ -35,16 +41,55 @@ const initialEvent = {
   end_at: '',
   capacity: '',
   description: '',
+  organization_id: '',
+  opportunity_id: '',
 };
 
 function CreateEventModal({ onClose, onCreate }) {
+  const { user } = useAuth();
   const [form, setForm] = useState(initialEvent);
   const [loading, setLoading] = useState(false);
+  const [organizations, setOrganizations] = useState([]);
+  const [opportunities, setOpportunities] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchData = async () => {
+      try {
+        if (user.role === 'admin') {
+          const orgList = await adminService.organizations();
+          if (mounted) setOrganizations(orgList.data || []);
+        }
+        const oppList = await opportunityService.list();
+        if (mounted) setOpportunities(oppList.data || []);
+      } catch (err) {
+        toast.error('Failed to load lookup data');
+      }
+    };
+    fetchData();
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
+
   const handleSubmit = async e => {
     e.preventDefault();
+    if (user.role === 'admin' && !form.organization_id) {
+      toast.error('Please select a hosting organization');
+      return;
+    }
     setLoading(true);
     try {
-      await onCreate({ ...form, capacity: form.capacity ? Number(form.capacity) : null });
+      const payload = {
+        ...form,
+        capacity: form.capacity ? Number(form.capacity) : null,
+        opportunity_id: form.opportunity_id || null,
+        organization_id: user.role === 'admin' ? form.organization_id : null,
+      };
+      if (user.role !== 'admin') {
+        delete payload.organization_id;
+      }
+      await onCreate(payload);
       onClose();
     } finally {
       setLoading(false);
@@ -55,6 +100,45 @@ function CreateEventModal({ onClose, onCreate }) {
     <Modal open onClose={onClose} title="Schedule New Event">
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
+          {user.role === 'admin' && (
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Hosting Organization *
+              </label>
+              <select
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700/60 dark:bg-slate-800/80 dark:text-slate-100"
+                value={form.organization_id}
+                onChange={e => setForm({ ...form, organization_id: e.target.value })}
+                required
+              >
+                <option value="">Select Organization</option>
+                {organizations.map(org => (
+                  <option key={org.id} value={org.id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+              Link to Opportunity (Optional)
+            </label>
+            <select
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 shadow-sm transition-all focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 dark:border-slate-700/60 dark:bg-slate-800/80 dark:text-slate-100"
+              value={form.opportunity_id}
+              onChange={e => setForm({ ...form, opportunity_id: e.target.value })}
+            >
+              <option value="">No linked opportunity</option>
+              {opportunities.map(opp => (
+                <option key={opp.id} value={opp.id}>
+                  {opp.title} ({opp.organization_name || 'Organization'})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Event Title *

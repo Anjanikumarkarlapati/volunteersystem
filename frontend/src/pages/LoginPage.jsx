@@ -1,4 +1,4 @@
-import { Eye, EyeOff, HeartHandshake, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, HeartHandshake, ArrowRight, Zap } from 'lucide-react';
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -59,6 +59,42 @@ const STATS = [
   { value: '34', label: 'Partner NGOs' },
 ];
 
+const DEMO_ACCOUNTS = [
+  {
+    role: 'Admin',
+    email: 'admin@volunteerhub.com',
+    password: 'Admin@123',
+    emoji: '🛡️',
+    color: 'from-rose-500 to-orange-400',
+    bg: 'bg-rose-50',
+    border: 'border-rose-200',
+    text: 'text-rose-700',
+    desc: 'Full platform control',
+  },
+  {
+    role: 'Organization',
+    email: 'org@volunteerhub.com',
+    password: 'Org@123',
+    emoji: '🏢',
+    color: 'from-cyan-500 to-blue-400',
+    bg: 'bg-cyan-50',
+    border: 'border-cyan-200',
+    text: 'text-cyan-700',
+    desc: 'Post & manage opportunities',
+  },
+  {
+    role: 'Volunteer',
+    email: 'volunteer@volunteerhub.com',
+    password: 'Vol@123',
+    emoji: '🙋',
+    color: 'from-violet-500 to-purple-400',
+    bg: 'bg-violet-50',
+    border: 'border-violet-200',
+    text: 'text-violet-700',
+    desc: 'Browse & apply to events',
+  },
+];
+
 export default function LoginPage() {
   const { login, user, googleLogin, completeGoogleRegistration, linkGoogle } = useAuth();
   const navigate = useNavigate();
@@ -70,6 +106,7 @@ export default function LoginPage() {
   const [linkData, setLinkData] = useState(null);
   const [linkPassword, setLinkPassword] = useState('');
   const [linkLoading, setLinkLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(null);
 
   if (user) return <Navigate to="/dashboard" replace />;
 
@@ -85,6 +122,19 @@ export default function LoginPage() {
       toast.error(getApiErrorMessage(error));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loginWithDemo = async account => {
+    setDemoLoading(account.role);
+    try {
+      await login({ email: account.email, password: account.password });
+      toast.success(`Welcome! Signed in as ${account.role} demo.`);
+      navigate('/dashboard', { replace: true });
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Demo login failed — run setup_demos.js first'));
+    } finally {
+      setDemoLoading(null);
     }
   };
 
@@ -295,8 +345,40 @@ export default function LoginPage() {
                 Sign in
               </h2>
               <p className="mt-2 text-sm text-on-surface-variant leading-relaxed">
-                Use your account or select a demo profile to enter the volunteer portal.
+                Use your account or try a demo profile below.
               </p>
+
+              {/* Demo Accounts Quick Login */}
+              <div className="mt-5 rounded-2xl border border-outline-variant bg-surface-container p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Zap className="h-3.5 w-3.5 text-on-surface-variant" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                    Try Demo Accounts
+                  </p>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {DEMO_ACCOUNTS.map(account => (
+                    <button
+                      key={account.role}
+                      id={`demo-login-${account.role.toLowerCase()}`}
+                      type="button"
+                      disabled={demoLoading !== null}
+                      onClick={() => loginWithDemo(account)}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-all hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed ${account.bg} ${account.border}`}
+                    >
+                      <span className="text-lg leading-none">
+                        {demoLoading === account.role ? '⏳' : account.emoji}
+                      </span>
+                      <span className={`text-[11px] font-bold ${account.text}`}>
+                        {account.role}
+                      </span>
+                      <span className="text-[9px] text-on-surface-variant leading-tight">
+                        {account.desc}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <form className="mt-8 space-y-5" onSubmit={submit}>
                 {/* Email */}

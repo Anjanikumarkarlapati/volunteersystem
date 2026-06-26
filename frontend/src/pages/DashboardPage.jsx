@@ -438,9 +438,13 @@ export default function DashboardPage() {
             index={0}
           />
           <StatCard
-            icon={ClipboardList}
-            label="Active Opportunities"
-            value={summary?.active_opportunities || 0}
+            icon={user.role === 'volunteer' ? Award : ClipboardList}
+            label={user.role === 'volunteer' ? 'Certificates Earned' : 'Active Opportunities'}
+            value={
+              user.role === 'volunteer'
+                ? summary?.certificates_issued || 0
+                : summary?.active_opportunities || 0
+            }
             tone="emerald"
             index={1}
           />
@@ -463,26 +467,13 @@ export default function DashboardPage() {
             tone="amber"
             index={3}
           />
-          {user.role === 'volunteer' && (
-            <>
-              <StatCard
-                icon={CheckCircle2}
-                label="Pending Tasks"
-                value={summary?.upcoming_events || 0}
-                tone="amber"
-                index={4}
-              />
-            </>
-          )}
-          {user.role !== 'volunteer' && (
-            <StatCard
-              icon={CheckCircle2}
-              label="Pending Applications"
-              value={summary?.pending_applications || 0}
-              tone="cyan"
-              index={4}
-            />
-          )}
+          <StatCard
+            icon={CheckCircle2}
+            label="Pending Applications"
+            value={summary?.pending_applications || 0}
+            tone="cyan"
+            index={4}
+          />
         </div>
       )}
 

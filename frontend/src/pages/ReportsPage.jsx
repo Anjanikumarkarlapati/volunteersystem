@@ -9,7 +9,7 @@ import {
   Users,
   AlertTriangle,
 } from 'lucide-react';
-import Badge from '../components/StatusBadge.jsx';
+import Badge from '../components/ui/Badge.jsx';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';

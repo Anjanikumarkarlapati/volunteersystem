@@ -802,7 +802,7 @@ export default function AdminUsersPage() {
                         {log.action?.replace(/_/g, ' ') || 'Platform activity'}
                       </p>
                       <p className="text-xs text-muted mt-0.5">
-                        {log.entity_type} • {log.user_name || log.user_email || 'System'} •{' '}
+                        {log.entity_type} • {log.actor_email || 'System'} •{' '}
                         {log.created_at
                           ? new Date(log.created_at).toLocaleString('en-US', {
                               month: 'short',

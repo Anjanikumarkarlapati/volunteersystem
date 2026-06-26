@@ -1,5 +1,5 @@
 import { Copy, Plus, RefreshCw, Shield, Trophy, UserPlus, Users } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import EmptyState from '../components/EmptyState.jsx';
@@ -23,10 +23,18 @@ const getInitials = (name = '') =>
 
 export default function SquadsPage() {
   const { profile } = useAuth();
-  const [volunteerProfile, setVolunteerProfile] = useState(profile);
   const [squads, setSquads] = useState([]);
-  const [selectedSquad, setSelectedSquad] = useState(null);
+  const [selectedSquad, _setSelectedSquad] = useState(null);
+  const selectedSquadIdRef = useRef(null);
+
+  const setSelectedSquad = useCallback(val => {
+    _setSelectedSquad(val);
+    selectedSquadIdRef.current = val?.id || null;
+  }, []);
+
+  const [volunteerProfile, setVolunteerProfile] = useState(null);
   const [form, setForm] = useState({ name: '', description: '' });
+  const [joinCode, setJoinCode] = useState('');
   const [memberId, setMemberId] = useState('');
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -45,7 +53,7 @@ export default function SquadsPage() {
       const rows = list.data || [];
       setSquads(rows);
       if (rows.length) {
-        const currentId = selectedSquad?.id || rows[0].id;
+        const currentId = selectedSquadIdRef.current || rows[0].id;
         const detail = await squadService.get(currentId);
         setSelectedSquad(detail);
       } else {
@@ -56,7 +64,7 @@ export default function SquadsPage() {
     } finally {
       setLoading(false);
     }
-  }, [profile, selectedSquad?.id]);
+  }, [profile]);
 
   useEffect(() => {
     loadSquads();
