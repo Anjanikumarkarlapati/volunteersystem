@@ -102,3 +102,63 @@ export const chatWithAssistant = asyncHandler(async (req, res) => {
     throw new ApiError(500, 'Failed to connect to the AI assistant');
   }
 });
+
+export const getPlatformAiSummary = asyncHandler(async (req, res) => {
+  if (req.user.role !== 'admin') {
+    throw new ApiError(403, 'Only admins can generate platform summaries');
+  }
+
+  const [stats, topOrgs, topEvents] = await Promise.all([
+    query(`
+      SELECT 
+        (SELECT COUNT(*) FROM users WHERE role = 'volunteer') AS total_volunteers,
+        (SELECT COUNT(*) FROM users WHERE role = 'organization') AS total_orgs,
+        (SELECT COUNT(*) FROM events WHERE status = 'scheduled') AS active_events,
+        (SELECT COALESCE(SUM(hours), 0) FROM attendance WHERE status = 'attended') AS total_hours
+    `),
+    query(`
+      SELECT org.name, COUNT(e.id) as event_count
+      FROM organizations org
+      LEFT JOIN events e ON e.organization_id = org.id
+      GROUP BY org.name
+      ORDER BY event_count DESC
+      LIMIT 3
+    `),
+    query(`
+      SELECT title, start_at
+      FROM events
+      WHERE status = 'scheduled'
+      ORDER BY start_at ASC
+      LIMIT 3
+    `),
+  ]);
+
+  const platformData = {
+    statistics: stats.rows[0],
+    top_organizations: topOrgs.rows,
+    upcoming_events: topEvents.rows,
+  };
+
+  const prompt = `
+You are an AI assistant for a Volunteer Management System. Generate a concise, intelligent summary of the current platform activity for the admin dashboard.
+
+Here is the current platform data:
+${JSON.stringify(platformData, null, 2)}
+
+Instructions:
+1. Write 2-3 short, engaging paragraphs.
+2. Highlight key metrics (total volunteers, orgs, hours, etc.).
+3. Mention top organizations or upcoming events to give it a dynamic feel.
+4. Keep the tone professional, encouraging, and insightful.
+5. Return ONLY the text summary, no JSON, no markdown blocks.
+  `;
+
+  try {
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+    const response = await model.generateContent(prompt);
+    res.json({ summary: response.response.text().trim() });
+  } catch (error) {
+    console.error('Gemini API Error:', error);
+    throw new ApiError(500, 'Failed to generate AI summary');
+  }
+});

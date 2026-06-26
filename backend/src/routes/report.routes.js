@@ -7,6 +7,7 @@ import {
   getPlatformReport,
   getVolunteerReport,
 } from '../controllers/report.controller.js';
+import { getPlatformAiSummary } from '../controllers/aiController.js';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.get(
   getOrganizationReport
 );
 router.get('/platform', authenticate, authorize('admin'), getPlatformReport);
+router.get('/ai-summary', authenticate, authorize('admin'), getPlatformAiSummary);
 router.get('/volunteer', authenticate, authorize('volunteer'), getVolunteerReport);
 
 export default router;
