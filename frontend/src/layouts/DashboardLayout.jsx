@@ -1,4 +1,5 @@
 import {
+  Award,
   BarChart3,
   Bell,
   Building2,
@@ -44,6 +45,13 @@ const navItems = [
   { label: 'Applications', to: '/applications', icon: Users, group: 'Workflows' },
   { label: 'Events', to: '/events', icon: CalendarDays, group: 'Workflows' },
   { label: 'Feedback', to: '/feedback', icon: MessageSquareDiff, group: 'Workflows' },
+  {
+    label: 'Certificates',
+    to: '/certificates',
+    icon: Award,
+    roles: ['volunteer'],
+    group: 'Volunteer',
+  },
   { label: 'Profile', to: '/profile', icon: User, group: 'Account' },
   { label: 'Settings', to: '/settings', icon: Settings, group: 'Account' },
   { label: 'Reports', to: '/reports', icon: BarChart3, group: 'Account' },

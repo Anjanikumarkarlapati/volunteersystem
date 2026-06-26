@@ -5,6 +5,7 @@ import DashboardLayout from './layouts/DashboardLayout.jsx';
 import ProtectedRoute from './routes/ProtectedRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
+import CertificatesPage from './pages/CertificatesPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import OAuthRoleSelection from './pages/OAuthRoleSelection.jsx';
@@ -71,6 +72,7 @@ export default function App() {
           <Route path="/opportunities/:id" element={<OpportunityDetailPage />} />
           <Route path="/applications" element={<ApplicationsPage />} />
           <Route path="/events" element={<EventsPage />} />
+          <Route path="/certificates" element={<CertificatesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route
