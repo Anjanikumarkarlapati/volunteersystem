@@ -268,17 +268,18 @@ export default function CertificatesPage() {
   useEffect(() => {
     setLoading(true);
     api
-      .get('/attendance?status=verified')
+      .get('/certificates/me')
       .then(res => {
         const rows = Array.isArray(res.data) ? res.data : res.data?.data || [];
         const mapped = rows.map((r, i) => ({
           id: r.id || i,
           volunteerName: user?.name || 'Volunteer',
           taskName: r.event_title || r.title || 'Volunteer Event',
-          organizerName: r.organization_name || r.organizer || 'Volunteer Hub',
-          hours: parseFloat(r.hours || r.volunteer_hours || 0).toFixed(1),
-          dateIssued: formatDate(r.check_out_at || r.updated_at),
-          certNumber: generateCertNo(r.id || String(i + 42)),
+          organizerName: r.organization_name || 'Volunteer Hub',
+          hours: parseFloat(r.hours || 0).toFixed(1),
+          dateIssued: formatDate(r.issued_at || r.created_at),
+          certNumber: r.certificate_number || generateCertNo(r.id || String(i + 42)),
+          fileUrl: r.file_url || null,
         }));
         setCerts(mapped);
         if (mapped.length > 0) setSelected(mapped[0]);

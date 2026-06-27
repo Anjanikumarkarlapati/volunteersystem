@@ -1,4 +1,3 @@
-
 # Volunteer Management System
 
 Production-ready full-stack Volunteer Management System built with React, Vite, Tailwind CSS, Node.js, Express, JWT auth, bcrypt password hashing, and PostgreSQL.
@@ -96,14 +95,15 @@ psql -d volunteer_management -f database/seed.sql
 
 ## Key Features
 
-- JWT access tokens with refresh-token rotation
+- JWT access tokens with refresh-token rotation and a secure Forgot Password / Reset Password flow
 - Role-based authorization for volunteers, organizations, and admins
-- Volunteer profiles with skills, interests, availability, history, hours, and certificates
+- Volunteer profiles with skills, interests, availability, history, verified hours, and earned certificates
+- High-resolution Certificate Generation page with dynamic preview and PNG download capabilities via html2canvas (runs on client-side)
 - Opportunity search, filtering, creation, application, and review workflows
 - Event scheduling, volunteer assignment, and attendance tracking
 - In-app notifications and SMTP-ready email notification service
-- PDF certificate generation and secure download endpoint
-- Admin dashboard, users, organizations, platform monitoring, and reports
+- Admin volunteer search page with detailed profile viewer, application details, and dynamic AI-powered Performance & Reliability Analysis via Google Gemini
+- Admin dashboard with platform-wide health reports, users/org moderation, and global KPIs
 - Responsive Tailwind UI with dark mode, protected routes, loading states, and toast notifications
 - PostgreSQL schema with constraints, indexes, triggers, sample data, and ER diagram
 

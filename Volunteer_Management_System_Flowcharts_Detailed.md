@@ -55,11 +55,18 @@ flowchart TD
     OrgVerify -- Denied --> Dispute["Hours Invalidated / Flagged"]
     OrgVerify -- Approved --> HoursCredit["Earn Verified Service Hours!"]
 
-    HoursCredit --> Feedback["Submit Post-Event Rating"]
+    HoursCredit --> CertCheck{"View Earned Certificate?"}
+    CertCheck -- Yes --> ViewCertPage["Access Certificates Tab"]
+    ViewCertPage --> FetchVerified["Fetch Verified Attendance Records"]
+    FetchVerified --> PreviewCert["Render Live HTML/CSS Certificate Preview"]
+    PreviewCert --> DownloadCert["Download PNG (via html2canvas)"]
+    DownloadCert --> Feedback["Submit Post-Event Rating"]
 
-    class Start,Dashboard,Apply,Discover,Attend,CheckIn,Feedback userAction
-    class AI_Endpoint,AI_Display,Notification,AutoSchedule,Dispute systemAction
-    class AI_Match,Wait,OrgVerify decision
+    CertCheck -- No --> Feedback
+
+    class Start,Dashboard,Apply,Discover,Attend,CheckIn,ViewCertPage,PreviewCert,Feedback userAction
+    class AI_Endpoint,AI_Display,Notification,AutoSchedule,Dispute,FetchVerified,DownloadCert systemAction
+    class AI_Match,Wait,OrgVerify,CertCheck decision
     class HoursCredit success
 ```
 
@@ -137,8 +144,17 @@ flowchart TD
     UserDecision -- No --> ClearFlag["Clear Warning / Dismiss Flag"]
     UserDecision -- Yes --> SuspendUser["Execute Account Suspension / IP Ban"]
 
-    class Start,MainDash,AI_Report,ReadReport,ReviewOrg,ViewFlags adminAction
-    class AI_Summary,UnlockOrg,ClearFlag systemAction
-    class ActionChoice,OrgDecision,UserDecision decision
+    ActionChoice -- Volunteer Search & Report --> SearchVol["Search Volunteers (by Name/ID/Email)"]
+    SearchVol --> SelectVol["Select Volunteer & View Detailed Dossier"]
+    SelectVol --> VolReport["Fetch Profile, Applications & Verified Hours"]
+    VolReport --> AskAIReport{"Generate AI Performance Summary?"}
+    AskAIReport -- Yes --> ReqAIReport["Backend: POST /api/admin/volunteers/:id/ai-summary"]
+    ReqAIReport --> GetGeminiReport["Gemini Analyzes Attendance, Skills & Reliability"]
+    GetGeminiReport --> DisplayAIReport["Display Dynamic AI Summary Card"]
+    AskAIReport -- No --> DisplayStaticReport["Display Static Volunteer Report Cards"]
+
+    class Start,MainDash,AI_Report,ReadReport,ReviewOrg,ViewFlags,SearchVol,SelectVol adminAction
+    class AI_Summary,UnlockOrg,ClearFlag,VolReport,ReqAIReport,GetGeminiReport,DisplayAIReport,DisplayStaticReport systemAction
+    class ActionChoice,OrgDecision,UserDecision,AskAIReport decision
     class BlockOrg,SuspendUser danger
 ```

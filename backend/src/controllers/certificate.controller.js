@@ -130,10 +130,13 @@ export const listMyCertificates = asyncHandler(async (req, res) => {
   }
 
   const { rows } = await query(
-    `SELECT c.*, e.title AS event_title, op.title AS opportunity_title
+    `SELECT c.*, e.title AS event_title, op.title AS opportunity_title,
+            COALESCE(org_e.name, org_o.name, 'Volunteer Hub') AS organization_name
      FROM certificates c
      LEFT JOIN events e ON e.id = c.event_id
      LEFT JOIN opportunities op ON op.id = c.opportunity_id
+     LEFT JOIN organizations org_e ON org_e.id = e.organization_id
+     LEFT JOIN organizations org_o ON org_o.id = op.organization_id
      WHERE c.volunteer_id = $1
      ORDER BY c.issued_at DESC`,
     [volunteer.id]

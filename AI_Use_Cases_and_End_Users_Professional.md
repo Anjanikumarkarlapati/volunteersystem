@@ -14,6 +14,7 @@
    - [A. Smart Event Matchmaking (Backend AI)](#a-smart-event-matchmaking-backend-ai)
    - [B. Context-Aware AI Support Agent (Frontend AI)](#b-context-aware-ai-support-agent-frontend-ai)
    - [C. Executive Analytics & Health Summary (Admin AI)](#c-executive-analytics--health-summary-admin-ai)
+   - [D. AI Volunteer Performance & Reliability Analysis (Admin AI)](#d-ai-volunteer-performance--reliability-analysis-admin-ai)
 3. [Security & Data Privacy](#3-security--data-privacy)
 
 ---
@@ -32,6 +33,7 @@ The platform operates on a rigid permission structure. Each user type is restric
   - Submit and track applications.
   - Execute physical check-ins at active event locations via the portal.
   - Accrue verified service hours upon organization approval.
+  - View, preview, and download secure, print-ready participation certificates (PNG format) for completed and verified events.
 - **Access Boundary:** Restricted strictly to public datasets and their own Personally Identifiable Information (PII) / application history.
 
 ### 🏢 1.2 The Organizer (The Management Layer)
@@ -100,6 +102,21 @@ Rather than treating AI as a conversational novelty, the VMS leverages **Google 
 - **The Operational Bottleneck:** Dashboards display raw data (e.g., "45 pending orgs," "120 active volunteers"), but translating that raw data into a strategic action plan requires time-consuming human synthesis.
 - **The AI Solution:** A secure "Generate AI Report" feature integrated directly into the Admin Dashboard.
 - **The Output:** With a single click, the system aggregates live database statistics and tasks Gemini with writing a comprehensive, human-readable "Health Check." The AI highlights critical trends and suggests immediate operational adjustments (e.g., _"Action Required: Organization verification is bottlenecking; 45 organizations are awaiting approval. Prioritize clearing this queue to increase the volume of available events."_).
+
+### D. AI Volunteer Performance & Reliability Analysis (Admin AI)
+
+| **Metric**              | **Details**                                                        |
+| :---------------------- | :----------------------------------------------------------------- |
+| **Primary Beneficiary** | Platform Administrators                                            |
+| **Component/Endpoint**  | `AdminUsersPage.jsx` / `POST /api/admin/volunteers/:id/ai-summary` |
+| **Model**               | `gemini-2.5-flash`                                                 |
+
+- **The Operational Bottleneck:** Checking a volunteer's engagement, verifying their reliability, and assessing their growth across different projects requires manual auditing of multiple database records (applications, check-in success rates, completed hours, organizer ratings).
+- **The AI Solution:** A dedicated search dashboard that pulls a complete volunteer dossier. Under the volunteer's profile, the admin can trigger a real-time AI summary analysis.
+- **The Output:** The backend aggregates the volunteer's profile data, skills list, application success rates, verification history, and total hours, sending a formatted context to Gemini. The model generates a structured, natural-language performance review detailing:
+  - **Reliability Assessment:** Based on attendance verification rates and check-in success.
+  - **Skill Alignment Analysis:** How their stated skills correspond to the roles they are actually selecting and performing.
+  - **Leadership Suitability:** Recommendations on whether the volunteer is a candidate for advanced or leadership roles.
 
 ---
 
