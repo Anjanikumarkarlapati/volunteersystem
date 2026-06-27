@@ -214,6 +214,80 @@ async function run() {
       console.log('✅ Pending opportunity created for admin approvals');
     }
 
+    /* ─── 4.5. Additional Opportunities for AP and TS ──────────────────── */
+    // AP Opportunity 1
+    const oppAP1Check = await client.query(
+      `SELECT id FROM opportunities WHERE title = 'Beach Cleaning Campaign' AND organization_id = $1`,
+      [organizationId]
+    );
+    if (oppAP1Check.rows.length === 0) {
+      await client.query(
+        `INSERT INTO opportunities (organization_id, title, description, category, capacity, location,
+           start_date, end_date, hours_estimate, status, required_skills)
+         VALUES ($1, 'Beach Cleaning Campaign',
+           'Help us clean the beautiful beaches of Visakhapatnam. A weekend dedicated to protecting marine life.',
+           'Environment', 40, 'Visakhapatnam, Andhra Pradesh',
+           CURRENT_DATE + INTERVAL '5 days', CURRENT_DATE + INTERVAL '7 days',
+           8, 'open', ARRAY['teamwork','physical fitness'])`,
+        [organizationId]
+      );
+    }
+
+    // AP Opportunity 2
+    const oppAP2Check = await client.query(
+      `SELECT id FROM opportunities WHERE title = 'Rural Education Support' AND organization_id = $1`,
+      [organizationId]
+    );
+    if (oppAP2Check.rows.length === 0) {
+      await client.query(
+        `INSERT INTO opportunities (organization_id, title, description, category, capacity, location,
+           start_date, end_date, hours_estimate, status, required_skills)
+         VALUES ($1, 'Rural Education Support',
+           'Volunteer to teach basic mathematics and english to children in rural areas around Vijayawada.',
+           'Education', 25, 'Vijayawada, Andhra Pradesh',
+           CURRENT_DATE + INTERVAL '10 days', CURRENT_DATE + INTERVAL '20 days',
+           15, 'open', ARRAY['teaching','communication','patience'])`,
+        [organizationId]
+      );
+    }
+
+    // TS Opportunity 1
+    const oppTS1Check = await client.query(
+      `SELECT id FROM opportunities WHERE title = 'Heritage Walk Guidance' AND organization_id = $1`,
+      [organizationId]
+    );
+    if (oppTS1Check.rows.length === 0) {
+      await client.query(
+        `INSERT INTO opportunities (organization_id, title, description, category, capacity, location,
+           start_date, end_date, hours_estimate, status, required_skills)
+         VALUES ($1, 'Heritage Walk Guidance',
+           'Act as a local guide for tourists and school children visiting the historic sites of Warangal.',
+           'Community', 15, 'Warangal, Telangana',
+           CURRENT_DATE + INTERVAL '14 days', CURRENT_DATE + INTERVAL '15 days',
+           6, 'open', ARRAY['public speaking','history','communication'])`,
+        [organizationId]
+      );
+    }
+
+    // TS Opportunity 2
+    const oppTS2Check = await client.query(
+      `SELECT id FROM opportunities WHERE title = 'Tech for Good Hackathon' AND organization_id = $1`,
+      [organizationId]
+    );
+    if (oppTS2Check.rows.length === 0) {
+      await client.query(
+        `INSERT INTO opportunities (organization_id, title, description, category, capacity, location,
+           start_date, end_date, hours_estimate, status, required_skills)
+         VALUES ($1, 'Tech for Good Hackathon',
+           'Mentor young developers building solutions for local NGOs. Code for a cause!',
+           'Technology', 20, 'Gachibowli, Hyderabad, Telangana',
+           CURRENT_DATE + INTERVAL '20 days', CURRENT_DATE + INTERVAL '22 days',
+           24, 'open', ARRAY['programming','mentorship','problem solving'])`,
+        [organizationId]
+      );
+      console.log('✅ Added AP and TS opportunities');
+    }
+
     /* ─── 5. Create Events for each opportunity ──────────── */
     // 5 completed events for opp1 (past, all attended by demo volunteer)
     for (let i = 0; i < 5; i++) {
