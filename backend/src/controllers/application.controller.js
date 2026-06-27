@@ -152,38 +152,39 @@ export const updateApplicationStatus = asyncHandler(async (req, res) => {
   const updatedApp = rows[0];
 
   if (req.body.status === 'approved' && application.status !== 'approved') {
-    // Get organization ID from opportunity
-    const orgResult = await query(`SELECT organization_id FROM opportunities WHERE id = $1`, [
-      application.opportunity_id,
-    ]);
-    const organizationId = orgResult.rows[0]?.organization_id;
+    // Get organization ID and dates from opportunity
+    const orgResult = await query(
+      `SELECT organization_id, start_date, end_date FROM opportunities WHERE id = $1`,
+      [application.opportunity_id]
+    );
+    const opp = orgResult.rows[0];
 
-    if (organizationId) {
-      // Create 5 daily events
-      for (let i = 0; i < 5; i++) {
-        const eventResult = await query(
-          `INSERT INTO events (
-             opportunity_id, organization_id, created_by, title, description, start_at, end_at, capacity, status
-           )
-           VALUES ($1, $2, $3, $4, $5, NOW() + INTERVAL '${i} days', NOW() + INTERVAL '${i} days' + INTERVAL '4 hours', 1, 'scheduled')
-           RETURNING *`,
-          [
-            application.opportunity_id,
-            organizationId,
-            req.user.id,
-            `Day ${i + 1} Task: ${application.opportunity_title}`,
-            `Daily task (4 hours) for ${application.volunteer_name}.`,
-          ]
-        );
-        const newEvent = eventResult.rows[0];
+    if (opp && opp.organization_id) {
+      // Create a single event for the opportunity duration
+      const eventResult = await query(
+        `INSERT INTO events (
+           opportunity_id, organization_id, created_by, title, description, start_at, end_at, capacity, status
+         )
+         VALUES ($1, $2, $3, $4, $5, COALESCE($6, NOW()), COALESCE($7, NOW() + INTERVAL '4 hours'), 1, 'scheduled')
+         RETURNING *`,
+        [
+          application.opportunity_id,
+          opp.organization_id,
+          req.user.id,
+          `Task: ${application.opportunity_title}`,
+          `Task assignment for ${application.volunteer_name}.`,
+          opp.start_date,
+          opp.end_date,
+        ]
+      );
+      const newEvent = eventResult.rows[0];
 
-        // Assign the volunteer
-        await query(
-          `INSERT INTO attendance (event_id, volunteer_id, status, notes)
-           VALUES ($1, $2, 'assigned', '5 days')`,
-          [newEvent.id, application.volunteer_id]
-        );
-      }
+      // Assign the volunteer
+      await query(
+        `INSERT INTO attendance (event_id, volunteer_id, status, notes)
+         VALUES ($1, $2, 'assigned', 'standard')`,
+        [newEvent.id, application.volunteer_id]
+      );
     }
   }
 

@@ -55,7 +55,7 @@ export const generateCertificatePdf = async ({
     document.moveDown(1.2);
     document
       .fontSize(13)
-      .text(`Issued by ${organizationName || 'Volunteer Hub'}`, { align: 'center' });
+      .text(`Organized by ${organizationName || 'Volunteer Hub'}`, { align: 'center' });
     document.moveDown(2.4);
     document
       .fontSize(11)
