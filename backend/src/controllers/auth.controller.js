@@ -170,7 +170,7 @@ export const me = asyncHandler(async (req, res) => {
   }
 
   res.json({
-    user: req.user,
+    user: toPublicUser(req.user),
     profile,
   });
 });

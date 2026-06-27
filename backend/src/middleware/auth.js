@@ -20,7 +20,7 @@ export const authenticate = asyncHandler(async (req, _res, next) => {
   }
 
   const { rows } = await query(
-    `SELECT id, name, email, role, status
+    `SELECT id, name, email, role, status, provider, (password_hash IS NOT NULL) AS has_password
      FROM users
      WHERE id = $1`,
     [payload.sub]
