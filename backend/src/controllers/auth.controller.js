@@ -32,6 +32,8 @@ const toPublicUser = user => ({
   email: user.email,
   role: user.role,
   status: user.status,
+  provider: user.provider,
+  has_password: user.has_password !== undefined ? user.has_password : !!user.password_hash,
   created_at: user.created_at,
   updated_at: user.updated_at,
 });
@@ -211,6 +213,35 @@ export const changePassword = asyncHandler(async (req, res) => {
   await updatePassword(req.user.id, passwordHash);
 
   res.json({ message: 'Password changed successfully' });
+});
+
+export const setPassword = asyncHandler(async (req, res) => {
+  const { newPassword } = req.body;
+
+  if (!newPassword) {
+    throw new ApiError(400, 'New password is required');
+  }
+
+  if (newPassword.length < 8) {
+    throw new ApiError(400, 'New password must be at least 8 characters');
+  }
+
+  const user = await findUserWithPasswordById(req.user.id);
+  if (!user) {
+    throw new ApiError(404, 'User not found');
+  }
+
+  if (user.password_hash) {
+    throw new ApiError(400, 'Password is already set. Use change password instead.');
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  await updatePassword(req.user.id, passwordHash);
+
+  res.json({
+    message: 'Password set successfully',
+    user: toPublicUser({ ...user, password_hash: passwordHash }),
+  });
 });
 
 export const deleteAccount = asyncHandler(async (req, res) => {

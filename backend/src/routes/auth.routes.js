@@ -17,6 +17,7 @@ import {
   updateProfile,
   forgotPassword,
   resetPassword,
+  setPassword,
 } from '../controllers/auth.controller.js';
 
 const router = Router();
@@ -108,6 +109,17 @@ router.post(
     validate,
   ],
   changePassword
+);
+router.post(
+  '/set-password',
+  authenticate,
+  [
+    body('newPassword')
+      .isLength({ min: 8 })
+      .withMessage('New password must be at least 8 characters'),
+    validate,
+  ],
+  setPassword
 );
 router.delete('/me', authenticate, deleteAccount);
 router.patch(

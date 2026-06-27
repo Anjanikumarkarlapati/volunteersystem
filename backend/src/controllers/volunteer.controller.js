@@ -163,19 +163,19 @@ export const getVolunteerHeatmap = asyncHandler(async (req, res) => {
   }
   const volunteerId = profile.id;
 
-  // Weekly attendance counts for last 52 weeks
-  const { rows: weekly } = await query(
+  // Daily attendance counts for last 365 days
+  const { rows: daily } = await query(
     `SELECT
-       to_char(date_trunc('week', e.start_at), 'YYYY-MM-DD') AS week_start,
+       to_char(date_trunc('day', e.start_at), 'YYYY-MM-DD') AS day_date,
        COUNT(*)::int AS events_count,
        COALESCE(SUM(att.hours), 0)::numeric AS hours_total
      FROM attendance att
      JOIN events e ON e.id = att.event_id
      WHERE att.volunteer_id = $1
        AND att.status = 'attended'
-       AND e.start_at >= NOW() - INTERVAL '52 weeks'
-     GROUP BY week_start
-     ORDER BY week_start ASC`,
+       AND e.start_at >= NOW() - INTERVAL '365 days'
+     GROUP BY day_date
+     ORDER BY day_date ASC`,
     [volunteerId]
   );
 
@@ -209,7 +209,7 @@ export const getVolunteerHeatmap = asyncHandler(async (req, res) => {
   );
 
   res.json({
-    weekly,
+    daily,
     monthly,
     churn_risk: churnRisk,
     days_since_last_event: daysSinceLast === 999 ? null : daysSinceLast,

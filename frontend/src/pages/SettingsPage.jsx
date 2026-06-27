@@ -133,6 +133,7 @@ function ProfileSection({ user, profile, refreshMe }) {
 }
 
 function PasswordSection() {
+  const { user, refreshMe } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -162,9 +163,30 @@ function PasswordSection() {
     }
   };
 
+  const handleSetPassword = async e => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await settingsService.setPassword({ newPassword });
+      toast.success('Password set successfully');
+      setNewPassword('');
+      setConfirmPassword('');
+      // Force refresh of the auth context to update user.has_password
+      await refreshMe();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, 'Could not set password'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <form onSubmit={handleChange} className="space-y-6">
-      <Card className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
+    <div>
+      <Card className="space-y-2 text-sm text-slate-600 dark:text-slate-400 mb-6">
         <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
           <ShieldCheck className="h-4 w-4" />
           <span className="font-semibold">Password tips</span>
@@ -175,35 +197,71 @@ function PasswordSection() {
           <li>Avoid reusing passwords from other sites</li>
         </ul>
       </Card>
-      <Input
-        label="Current Password"
-        type="password"
-        value={currentPassword}
-        onChange={e => setCurrentPassword(e.target.value)}
-        required
-      />
-      <Input
-        label="New Password"
-        type="password"
-        value={newPassword}
-        onChange={e => setNewPassword(e.target.value)}
-        required
-        minLength={8}
-      />
-      <Input
-        label="Confirm New Password"
-        type="password"
-        value={confirmPassword}
-        onChange={e => setConfirmPassword(e.target.value)}
-        required
-      />
-      <div className="flex justify-end pt-2">
-        <Button type="submit" variant="primary" loading={saving}>
-          <KeyRound className="h-4 w-4" />
-          Update Password
-        </Button>
-      </div>
-    </form>
+
+      {!user?.has_password ? (
+        <form onSubmit={handleSetPassword} className="space-y-6">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 mb-4">
+            <h4 className="font-bold text-blue-900">Create a password</h4>
+            <p className="text-sm text-blue-800 mt-1">
+              Since you logged in with Google, you don't have a password set. Create one below to
+              enable email login.
+            </p>
+          </div>
+          <Input
+            label="New Password"
+            type="password"
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+          <Input
+            label="Confirm New Password"
+            type="password"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            required
+          />
+          <div className="flex justify-end pt-2">
+            <Button type="submit" variant="primary" loading={saving}>
+              <KeyRound className="h-4 w-4" />
+              Set Password
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={handleChange} className="space-y-6">
+          <Input
+            label="Current Password"
+            type="password"
+            value={currentPassword}
+            onChange={e => setCurrentPassword(e.target.value)}
+            required
+          />
+          <Input
+            label="New Password"
+            type="password"
+            value={newPassword}
+            onChange={e => setNewPassword(e.target.value)}
+            required
+            minLength={8}
+          />
+          <Input
+            label="Confirm New Password"
+            type="password"
+            value={confirmPassword}
+            onChange={e => setConfirmPassword(e.target.value)}
+            required
+          />
+          <div className="flex justify-end pt-2">
+            <Button type="submit" variant="primary" loading={saving}>
+              <KeyRound className="h-4 w-4" />
+              Update Password
+            </Button>
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
 

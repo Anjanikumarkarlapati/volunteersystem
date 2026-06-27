@@ -23,6 +23,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Trophy,
+  AlertTriangle,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -525,6 +526,29 @@ export default function DashboardLayout() {
 
         {/* Page content */}
         <main className="relative z-0 mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          {user?.provider === 'google' && user?.has_password === false && (
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm flex items-start gap-4">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-amber-800">Secure your account</h3>
+                <p className="mt-1 text-sm text-amber-700">
+                  You logged in with Google and haven't set a password. Set one up to ensure you can
+                  always access your account.
+                </p>
+              </div>
+              <div>
+                <Link
+                  to="/settings"
+                  className="whitespace-nowrap rounded-lg bg-amber-100 px-4 py-2 text-sm font-bold text-amber-800 hover:bg-amber-200 transition-colors"
+                >
+                  Set Password
+                </Link>
+              </div>
+            </div>
+          )}
+
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 10 }}

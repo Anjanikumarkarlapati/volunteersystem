@@ -119,6 +119,7 @@ export const notificationService = {
 export const settingsService = {
   updateProfile: payload => api.put('/auth/me', payload).then(res => res.data),
   changePassword: payload => api.post('/auth/change-password', payload).then(res => res.data),
+  setPassword: payload => api.post('/auth/set-password', payload).then(res => res.data),
   deleteAccount: () => api.delete('/auth/me').then(res => res.data),
   updateNotificationPreferences: payload =>
     api.patch('/auth/notification-preferences', payload).then(res => res.data),

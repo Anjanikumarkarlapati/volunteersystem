@@ -11,29 +11,56 @@ const getColor = count => {
   return 'bg-primary-600 dark:bg-primary-500';
 };
 
-function buildGrid(weekly = []) {
+function buildGrid(daily = []) {
   const today = new Date();
-  const grid = [];
-  const weekMap = {};
+  today.setHours(0, 0, 0, 0);
 
-  for (const week of weekly) {
-    weekMap[week.week_start] = week;
+  const dayMap = {};
+  for (const day of daily) {
+    dayMap[day.day_date] = day;
   }
 
+  // Go back ~52 weeks (364 days)
   const start = new Date(today);
-  start.setDate(start.getDate() - 52 * 7);
+  start.setDate(today.getDate() - 364);
   start.setHours(0, 0, 0, 0);
-  const dayOfWeek = start.getDay() || 7;
-  start.setDate(start.getDate() - dayOfWeek + 1);
+
+  // Back up to the nearest Sunday
+  const startDayOfWeek = start.getDay();
+  start.setDate(start.getDate() - startDayOfWeek);
+
+  const grid = [];
+  let currentWeek = [];
 
   const current = new Date(start);
   while (current <= today) {
     const year = current.getFullYear();
     const month = String(current.getMonth() + 1).padStart(2, '0');
-    const day = String(current.getDate()).padStart(2, '0');
-    const weekStart = `${year}-${month}-${day}`;
-    grid.push(weekMap[weekStart] || { week_start: weekStart, events_count: 0, hours_total: 0 });
-    current.setDate(current.getDate() + 7);
+    const d = String(current.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${d}`;
+
+    currentWeek.push(
+      dayMap[dateStr] || {
+        day_date: dateStr,
+        events_count: 0,
+        hours_total: 0,
+        _date: new Date(current),
+      }
+    );
+
+    if (currentWeek.length === 7) {
+      grid.push(currentWeek);
+      currentWeek = [];
+    }
+    current.setDate(current.getDate() + 1);
+  }
+
+  if (currentWeek.length > 0) {
+    // Pad the remaining days of the current week with nulls
+    while (currentWeek.length < 7) {
+      currentWeek.push(null);
+    }
+    grid.push(currentWeek);
   }
 
   return grid;
@@ -43,7 +70,11 @@ function getMonthLabels(grid) {
   const labels = [];
   let prevMonth = null;
   grid.forEach((week, index) => {
-    const date = new Date(week.week_start);
+    // Find the first valid day in the week to check its month
+    const validDay = week.find(d => d !== null);
+    if (!validDay) return;
+
+    const date = validDay._date;
     const month = date.getMonth();
     if (month !== prevMonth) {
       labels.push({ index, label: MONTHS[month] });
@@ -54,36 +85,45 @@ function getMonthLabels(grid) {
 }
 
 export default function HeatmapChart({
-  weekly = [],
+  daily = [],
   monthly = [],
   churnRisk = 'low',
   daysSinceLast = null,
 }) {
-  const grid = useMemo(() => buildGrid(weekly), [weekly]);
+  const grid = useMemo(() => buildGrid(daily), [daily]);
   const monthLabels = useMemo(() => getMonthLabels(grid), [grid]);
+
   const insights = useMemo(() => {
-    const activeWeeks = grid.filter(week => Number(week.events_count || 0) > 0).length;
-    const quietWeeks = grid.length - activeWeeks;
-    const totalHours = grid.reduce((sum, week) => sum + Number(week.hours_total || 0), 0);
+    let activeDays = 0;
+    let totalDays = 0;
+    let totalHours = 0;
     let longestGap = 0;
     let currentGap = 0;
 
-    grid.forEach(week => {
-      if (Number(week.events_count || 0) === 0) {
+    // Flatten grid to process days sequentially
+    const days = grid.flat().filter(d => d !== null);
+
+    days.forEach(day => {
+      totalDays++;
+      if (Number(day.events_count || 0) === 0) {
         currentGap += 1;
         longestGap = Math.max(longestGap, currentGap);
       } else {
+        activeDays++;
         currentGap = 0;
+        totalHours += Number(day.hours_total || 0);
       }
     });
+
+    const quietDays = totalDays - activeDays;
 
     const peakMonth = [...monthly].sort(
       (a, b) => Number(b.hours_total || 0) - Number(a.hours_total || 0)
     )[0];
 
     return {
-      activeWeeks,
-      quietWeeks,
+      activeDays,
+      quietDays,
       longestGap,
       totalHours,
       peakMonth: peakMonth?.month || 'No peak yet',
@@ -107,16 +147,16 @@ export default function HeatmapChart({
     <div className="space-y-5">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: 'Active weeks', value: insights.activeWeeks },
-          { label: 'Longest gap', value: `${insights.longestGap} wk` },
+          { label: 'Active Days', value: insights.activeDays },
+          { label: 'Longest Gap', value: `${insights.longestGap} days` },
           {
-            label: 'Peak season',
+            label: 'Peak Season',
             value: insights.peakMonth,
             sub: insights.peakHours
               ? `${insights.peakHours.toFixed(1)} hrs`
               : 'Waiting for activity',
           },
-          { label: 'Hours shown', value: insights.totalHours.toFixed(1) },
+          { label: 'Total Hours', value: insights.totalHours.toFixed(1) },
         ].map(item => (
           <div
             key={item.label}
@@ -146,9 +186,6 @@ export default function HeatmapChart({
             ? 'No completed events yet'
             : `Last completed event: ${daysSinceLast === 0 ? 'today' : `${daysSinceLast} days ago`}`}
         </span>
-        <span className="text-xs text-slate-500 dark:text-slate-400">
-          {insights.quietWeeks} quiet weeks in the last year
-        </span>
       </div>
 
       <div className="overflow-x-auto pb-1">
@@ -177,33 +214,31 @@ export default function HeatmapChart({
               ))}
             </div>
 
-            {grid.map(week => {
-              const date = new Date(week.week_start);
-              return (
-                <div key={week.week_start} className="flex flex-col gap-0.5">
-                  {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
-                    const dayDate = new Date(date);
-                    dayDate.setDate(date.getDate() + dayOffset);
-                    const isToday = dayDate.toDateString() === new Date().toDateString();
-                    const isFuture = dayDate > new Date();
-                    return (
-                      <div
-                        key={dayOffset}
-                        title={
-                          isFuture
-                            ? ''
-                            : `${dayDate.toLocaleDateString()} - ${week.events_count} event(s), ${Number(week.hours_total).toFixed(1)} hrs`
-                        }
-                        className={`h-3 w-3 cursor-default rounded-sm transition-transform hover:scale-125
-                          ${isFuture ? 'bg-transparent' : getColor(Number(week.events_count || 0))}
-                          ${isToday ? 'ring-1 ring-primary-500' : ''}
-                        `}
-                      />
-                    );
-                  })}
-                </div>
-              );
-            })}
+            {grid.map((week, wIndex) => (
+              <div key={wIndex} className="flex flex-col gap-0.5">
+                {week.map((day, dIndex) => {
+                  if (!day) return <div key={dIndex} className="h-3 w-3 bg-transparent" />;
+
+                  const isFuture = day._date > new Date();
+                  const isToday = day._date.toDateString() === new Date().toDateString();
+
+                  return (
+                    <div
+                      key={dIndex}
+                      title={
+                        isFuture
+                          ? ''
+                          : `${day._date.toLocaleDateString()} - ${day.events_count} event(s), ${Number(day.hours_total).toFixed(1)} hrs`
+                      }
+                      className={`h-3 w-3 cursor-default rounded-sm transition-transform hover:scale-125
+                        ${isFuture ? 'bg-transparent' : getColor(Number(day.events_count || 0))}
+                        ${isToday ? 'ring-1 ring-primary-500' : ''}
+                      `}
+                    />
+                  );
+                })}
+              </div>
+            ))}
           </div>
 
           <div className="mt-2 ml-6 flex items-center gap-2">

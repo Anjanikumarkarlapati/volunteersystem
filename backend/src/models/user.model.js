@@ -1,7 +1,7 @@
 import { query } from '../config/db.js';
 
 export const userPublicFields =
-  'id, name, email, role, status, last_login_at, created_at, updated_at';
+  'id, name, email, role, status, provider, (password_hash IS NOT NULL) AS has_password, last_login_at, created_at, updated_at';
 
 export const findUserByEmail = async email => {
   const { rows } = await query('SELECT * FROM users WHERE lower(email) = lower($1)', [email]);

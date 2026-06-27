@@ -110,39 +110,46 @@ function ProfileHero({ user, profile, onUpload, selectedType }) {
         <div className="flex flex-col gap-4">
           {/* Avatar Row */}
           <div className="flex justify-between items-end -mt-16 sm:-mt-20">
-            <div className="relative shrink-0">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', bounce: 0.5 }}
+              className="relative shrink-0 p-1 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md rounded-full shadow-2xl"
+            >
               {profile?.profile_picture_url ? (
                 <img
                   src={profile.profile_picture_url}
                   alt=""
-                  className="h-28 w-28 sm:h-36 sm:w-36 rounded-full object-cover border-4 border-white dark:border-slate-900 shadow-lg bg-white dark:bg-slate-900"
+                  className="h-28 w-28 sm:h-36 sm:w-36 rounded-full object-cover border-4 border-white dark:border-slate-800 bg-white dark:bg-slate-900"
                 />
               ) : (
-                <div className="flex h-28 w-28 sm:h-36 sm:w-36 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900 border-4 border-white dark:border-slate-900 shadow-lg text-4xl font-black text-indigo-600 dark:text-indigo-400">
+                <div className="flex h-28 w-28 sm:h-36 sm:w-36 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 border-4 border-white dark:border-slate-800 text-4xl font-black text-white shadow-inner">
                   {user.name?.[0]?.toUpperCase() || '?'}
                 </div>
               )}
-              <label className="absolute bottom-1 right-1 sm:bottom-2 sm:right-2 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                <Camera className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+              <label className="absolute bottom-2 right-2 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 shadow-lg hover:scale-110 hover:bg-slate-50 transition-all text-indigo-600 dark:text-indigo-400 z-10">
+                <Camera className="h-5 w-5" />
                 <input className="hidden" type="file" accept="image/*" onChange={onUpload} />
               </label>
-            </div>
+            </motion.div>
 
-            <div className="mb-2">
+            <div className="mb-4">
               <Badge status={profile?.user_status || (profile?.verified ? 'active' : 'pending')} />
             </div>
           </div>
 
           {/* Info Row */}
-          <div className="flex flex-col gap-4">
+          <motion.div
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="flex flex-col gap-4"
+          >
             <div>
-              <h2
-                className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white"
-                style={{ fontFamily: 'Plus Jakarta Sans, Inter, sans-serif' }}
-              >
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 {user.name}
               </h2>
-              <p className="flex items-center gap-1.5 text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-1">
+              <p className="flex items-center gap-2 text-sm sm:text-base text-slate-500 dark:text-slate-400 mt-2 font-medium">
                 <Mail className="h-4 w-4" />
                 {user.email}
               </p>
@@ -199,7 +206,7 @@ function ProfileHero({ user, profile, onUpload, selectedType }) {
                 </button>
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
       </div>
     </div>
@@ -353,6 +360,7 @@ export default function ProfilePage() {
       ? [
           { id: 'profile', label: 'Profile', Icon: User },
           { id: 'history', label: 'Task History', Icon: Clock },
+          { id: 'certificates', label: 'Certificates', Icon: Award },
         ]
       : [{ id: 'profile', label: 'Organization', Icon: Building2 }];
 
@@ -698,7 +706,7 @@ export default function ProfilePage() {
               </p>
               {heatmap ? (
                 <HeatmapChart
-                  weekly={heatmap.weekly || []}
+                  daily={heatmap.daily || []}
                   monthly={heatmap.monthly || []}
                   churnRisk={heatmap.churn_risk || 'low'}
                   daysSinceLast={heatmap.days_since_last_event}
@@ -740,6 +748,74 @@ export default function ProfilePage() {
                 icon={Clock}
                 title="No task history yet"
                 description="When you complete volunteer events, they'll appear here."
+              />
+            )}
+          </motion.div>
+        )}
+        {activeTab === 'certificates' && (
+          <motion.div
+            key="certificates"
+            className="space-y-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {certificates.length ? (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {certificates.map(cert => (
+                  <div
+                    key={cert.id}
+                    className="relative group rounded-2xl bg-white dark:bg-slate-800 p-1 shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-xl hover:scale-[1.02] transition-all overflow-hidden flex flex-col"
+                  >
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                      <Award className="w-24 h-24 text-primary-500" />
+                    </div>
+                    <div className="relative p-5 flex-1 flex flex-col">
+                      <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center mb-4">
+                        <Star className="w-5 h-5 fill-current" />
+                      </div>
+                      <h4 className="font-extrabold text-lg text-slate-900 dark:text-white leading-tight mb-1">
+                        {cert.opportunity_title || cert.event_title || 'Volunteer Service'}
+                      </h4>
+                      <p className="text-sm font-semibold text-primary-600 dark:text-primary-400 mb-4">
+                        {cert.organization_name || 'Volunteer Hub'}
+                      </p>
+                      <div className="mt-auto space-y-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        <div className="flex justify-between border-t border-slate-100 dark:border-slate-700 pt-3">
+                          <span>Hours</span>
+                          <span className="text-slate-900 dark:text-white font-bold">
+                            {cert.hours_credited || 0}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Date</span>
+                          <span className="text-slate-900 dark:text-white">
+                            {new Date(cert.issued_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>ID</span>
+                          <span className="text-slate-900 dark:text-white font-mono">
+                            {cert.certificate_number}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => downloadCertificate(cert)}
+                      className="w-full py-3 bg-slate-50 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 text-sm font-bold border-t border-slate-200 dark:border-slate-700 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:text-primary-700 dark:group-hover:text-primary-300 transition-colors flex justify-center items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" /> Download PDF
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Award}
+                title="No certificates yet"
+                description="When you complete tasks and receive certificates, they will appear here."
               />
             )}
           </motion.div>
