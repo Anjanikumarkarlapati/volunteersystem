@@ -39,14 +39,15 @@ function buildGrid(daily = []) {
     const d = String(current.getDate()).padStart(2, '0');
     const dateStr = `${year}-${month}-${d}`;
 
-    currentWeek.push(
-      dayMap[dateStr] || {
-        day_date: dateStr,
-        events_count: 0,
-        hours_total: 0,
-        _date: new Date(current),
-      }
-    );
+    const dayData = dayMap[dateStr] || {
+      day_date: dateStr,
+      events_count: 0,
+      hours_total: 0,
+    };
+    currentWeek.push({
+      ...dayData,
+      _date: new Date(current),
+    });
 
     if (currentWeek.length === 7) {
       grid.push(currentWeek);
